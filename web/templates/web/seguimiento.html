@@ -135,6 +135,11 @@
     font-size:22px;
   }
 
+  .turno-actual.detectado{
+    border-color:{{ h.color_acento|default:'#d4af37' }};
+    box-shadow:0 0 0 2px rgba(212,175,55,.18);
+  }
+
   .share-box{
     margin-top:20px;
     display:flex;
@@ -218,10 +223,10 @@
 
     <div class="turno-actual">
       <h3 id="turnoTitulo">Sin turno seleccionado</h3>
-      <div class="dato"><strong>Pieza:</strong> <span id="piezaNombre">--</span></div>
-      <div class="dato"><strong>Género:</strong> <span id="piezaGenero">--</span></div>
-      <div class="dato"><strong>Compositor:</strong> <span id="piezaCompositor">--</span></div>
-      <div class="dato"><strong>Dirección:</strong> <span id="piezaDireccion">--</span></div>
+      <div class="dato" id="datoPieza" hidden><strong>Pieza:</strong> <span id="piezaNombre"></span></div>
+      <div class="dato" id="datoGenero" hidden><strong>Género:</strong> <span id="piezaGenero"></span></div>
+      <div class="dato" id="datoCompositor" hidden><strong>Compositor:</strong> <span id="piezaCompositor"></span></div>
+      <div class="dato" id="datoDireccion" hidden><strong>Dirección:</strong> <span id="piezaDireccion"></span></div>
     </div>
 
     <div class="share-box">
@@ -239,14 +244,18 @@
   const turnos = JSON.parse(document.getElementById("turnos-data").textContent);
   const ruta = JSON.parse(document.getElementById("ruta-coords").textContent);
   const gpsActivo = {{ h.gps_configurado|yesno:"true,false" }};
+  const DISTANCIA_DETECCION_TURNO_METROS = 5;
+  const PRECISION_GPS_MAXIMA_METROS = 5;
 
   const centroInicial = ruta.length ? ruta[0] : [14.5566, -90.7332];
 
   const map = L.map('mapaSeguimiento').setView(centroInicial, 16);
 
-  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    attribution: '&copy; OpenStreetMap'
-  }).addTo(map);
+ L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+  maxZoom: 19,
+  attribution:
+    '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> | Tradición Viva'
+}).addTo(map);
 
   if (ruta.length > 1) {
     const linea = L.polyline(ruta, {
@@ -258,12 +267,36 @@
     map.fitBounds(linea.getBounds(), { padding: [25, 25] });
   }
 
-  function actualizarPanel(turno) {
-    document.getElementById("turnoTitulo").textContent = turno.titulo || `Turno ${turno.numero}`;
-    document.getElementById("piezaNombre").textContent = turno.pieza || "--";
-    document.getElementById("piezaGenero").textContent = turno.genero || "--";
-    document.getElementById("piezaCompositor").textContent = turno.compositor || "--";
-    document.getElementById("piezaDireccion").textContent = turno.direccion || "--";
+  function actualizarDato(id, valor) {
+    const dato = document.getElementById(id);
+    const texto = String(valor || "").trim();
+    dato.hidden = !texto;
+    dato.querySelector("span").textContent = texto;
+  }
+
+  function actualizarPanel(turno, detectadoAutomaticamente = false) {
+    const panel = document.querySelector(".turno-actual");
+    panel.classList.toggle("detectado", detectadoAutomaticamente);
+    document.getElementById("turnoTitulo").textContent = turno
+      ? (turno.titulo || `Turno ${turno.numero}`)
+      : "Sin turno seleccionado";
+    actualizarDato("datoPieza", turno && turno.pieza);
+    actualizarDato("datoGenero", turno && turno.genero);
+    actualizarDato("datoCompositor", turno && turno.compositor);
+    actualizarDato("datoDireccion", turno && turno.direccion);
+  }
+
+  function actualizarMarcadorTurno(turnoDetectado) {
+    turnos.forEach(turno => {
+      if (!turno.marker) return;
+      const esActual = turnoDetectado && turno.id === turnoDetectado.id;
+      turno.marker.setStyle({
+        color: esActual ? "#ffffff" : "{{ h.color_acento|default:'#d4af37' }}",
+        fillColor: esActual ? "#168f4b" : "{{ h.color_acento|default:'#d4af37' }}",
+        radius: esActual ? 11 : 8,
+        weight: esActual ? 4 : 2,
+      });
+    });
   }
 
   turnos.forEach(turno => {
@@ -277,9 +310,17 @@
       </div>
     `;
 
-    const marker = L.marker(turno.coords).addTo(map).bindPopup(popupHtml);
+    const marker = L.circleMarker(turno.coords, {
+      radius: 8,
+      color: "{{ h.color_acento|default:'#d4af37' }}",
+      fillColor: "{{ h.color_acento|default:'#d4af37' }}",
+      fillOpacity: 0.95,
+      weight: 2,
+    }).addTo(map).bindPopup(popupHtml);
+    turno.marker = marker;
 
     marker.on("click", function() {
+      actualizarMarcadorTurno(turno);
       actualizarPanel(turno);
     });
   });
@@ -312,13 +353,13 @@
     return radioTierra * 2 * Math.atan2(Math.sqrt(hav), Math.sqrt(1 - hav));
   }
 
-  function turnoMasCercano(lat, lng) {
+  function turnoDetectadoPorGps(lat, lng) {
     let mejor = null;
     let mejorDistancia = Infinity;
 
     turnos.forEach(turno => {
       const d = distanciaHaversineMetros([lat, lng], turno.coords);
-      if (d < mejorDistancia) {
+      if (d <= DISTANCIA_DETECCION_TURNO_METROS && d < mejorDistancia) {
         mejorDistancia = d;
         mejor = turno;
       }
@@ -337,9 +378,20 @@
         document.getElementById("estadoGps").textContent = "Ubicación en vivo activa";
         document.getElementById("horaGps").textContent = data.deviceTime || data.serverTime || "--";
 
-        const turno = turnoMasCercano(data.latitude, data.longitude);
+        const precisionReportada = Number(data.accuracy);
+        const precisionAceptable = Number.isFinite(precisionReportada)
+          && precisionReportada <= PRECISION_GPS_MAXIMA_METROS;
+        if (!precisionAceptable) {
+          document.getElementById("estadoGps").textContent = (
+            "Esperando precisión GPS de 5 m o mejor"
+          );
+          return;
+        }
+
+        const turno = turnoDetectadoPorGps(data.latitude, data.longitude);
         if (turno) {
-          actualizarPanel(turno);
+          actualizarMarcadorTurno(turno);
+          actualizarPanel(turno, true);
         }
       } else {
         document.getElementById("estadoGps").textContent = data.message || "Sin conexión a Traccar";
@@ -348,10 +400,6 @@
       document.getElementById("estadoGps").textContent = "Error al leer GPS";
       console.error(error);
     }
-  }
-
-  if (turnos.length > 0) {
-    actualizarPanel(turnos[0]);
   }
 
   if (gpsActivo) {

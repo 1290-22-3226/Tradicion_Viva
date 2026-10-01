@@ -7,6 +7,7 @@ from django.contrib import messages
 from django.contrib.admin.views.decorators import staff_member_required
 from django.contrib.auth import authenticate, get_user_model, login
 from django.core import signing
+from django.core.exceptions import PermissionDenied
 from django.core.mail import send_mail
 from django.db import transaction
 from django.http import Http404, HttpResponse, JsonResponse
@@ -17,7 +18,14 @@ from django.utils.http import url_has_allowed_host_and_scheme
 from django.utils.text import slugify
 from django.views.decorators.http import require_POST
 
-from hermandades.models import CuentaDevoto, Devoto, EventoAgenda, Hermandad, TurnoRecorrido
+from hermandades.models import (
+    AdministradorOrganizacion,
+    CuentaDevoto,
+    Devoto,
+    EventoAgenda,
+    Hermandad,
+    TurnoRecorrido,
+)
 
 from .forms import (
     AdministrativoLoginForm,
@@ -94,6 +102,23 @@ def _hermandad_editor_por_slug(slug):
     raise Http404("No existe una hermandad o cofradía asociada a esta dirección.")
 
 
+def _validar_acceso_organizacion_staff(request, hermandad):
+    """Impide que un administrador navegue por URL a otra organización."""
+    if request.user.is_superuser:
+        return
+
+    autorizado = AdministradorOrganizacion.objects.filter(
+        usuario=request.user,
+        hermandad=hermandad,
+        activo=True,
+    ).exists()
+
+    if not autorizado:
+        raise PermissionDenied(
+            "No tienes permiso para administrar esta hermandad o cofradía."
+        )
+
+
 def home(request):
     hermandades = Hermandad.objects.filter(activa=True).order_by("nombre")
     return render(request, "web/home.html", {"hermandades": hermandades})
@@ -125,6 +150,7 @@ def devoto_login(request):
             else:
                 request.session.cycle_key()
                 request.session["cuenta_devoto_id"] = cuenta.pk
+                request.session.set_expiry(60 * 60 * 24 * 30 if form.cleaned_data["recordar"] else 0)
                 cuenta.ultimo_acceso = timezone.now()
                 cuenta.save(update_fields=["ultimo_acceso"])
                 nombre = cuenta.inscripciones.order_by("creado_en").values_list("primer_nombre", flat=True).first()
@@ -145,7 +171,10 @@ def devoto_login(request):
     return render(
         request,
         "web/devoto_login.html",
-        {"form": form, "next": request.GET.get("next", "")},
+        {
+            "form": form,
+            "next": request.GET.get("next", ""),
+        },
     )
 
 
@@ -219,10 +248,22 @@ def administrativo_login(request):
             password=form.cleaned_data["password"],
         )
         if user and user.is_active and user.is_staff:
-            login(request, user)
-            messages.success(request, "Bienvenido al panel administrativo de TRADICIÓN VIVA.")
-            return redirect("admin:index")
-        form.add_error(None, "Credenciales incorrectas o usuario sin permisos administrativos.")
+            tiene_acceso = user.is_superuser or AdministradorOrganizacion.objects.filter(
+                usuario=user,
+                activo=True,
+            ).exists()
+
+            if tiene_acceso:
+                login(request, user)
+                messages.success(request, "Bienvenido al panel administrativo de TRADICIÓN VIVA.")
+                return redirect("admin:index")
+
+            form.add_error(
+                None,
+                "Tu usuario administrativo todavía no tiene una hermandad o cofradía asignada.",
+            )
+        else:
+            form.add_error(None, "Credenciales incorrectas o usuario sin permisos administrativos.")
 
     return render(request, "web/administrativo_login.html", {"form": form})
 
@@ -499,6 +540,7 @@ def seguimiento(request, slug):
 @staff_member_required(login_url="web:administrativo_login")
 def editor_turnos(request, slug):
     h = _hermandad_editor_por_slug(slug)
+    _validar_acceso_organizacion_staff(request, h)
 
     if request.method == "POST":
         turno_id = request.POST.get("turno_id")
@@ -552,6 +594,7 @@ def editor_turnos(request, slug):
 @require_POST
 def eliminar_turno(request, slug, turno_id):
     h = _hermandad_editor_por_slug(slug)
+    _validar_acceso_organizacion_staff(request, h)
     turno = get_object_or_404(TurnoRecorrido, id=turno_id, hermandad=h)
     turno.delete()
     messages.success(request, "Turno eliminado.")
@@ -658,6 +701,7 @@ def api_ubicacion(request, slug):
                 "ok": True,
                 "latitude": latitude,
                 "longitude": longitude,
+                "accuracy": position.get("accuracy"),
                 "speed": position.get("speed"),
                 "course": position.get("course"),
                 "deviceTime": position.get("deviceTime"),

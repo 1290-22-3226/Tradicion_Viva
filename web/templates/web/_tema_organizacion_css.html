@@ -397,7 +397,7 @@ details[open] > :not(summary) *,
 .org-menu-dropdown *,
 .nav-dropdown *,
 .menu-dropdown *,
-#orgMenuDrawer *{
+#orgMenuDrawer .org-drawer-submenu *{
   color:var(--theme-dropdown-text)!important;
 }
 
@@ -410,7 +410,7 @@ details[open] > :not(summary) a,
 .org-menu-dropdown a,
 .nav-dropdown a,
 .menu-dropdown a,
-#orgMenuDrawer a{
+#orgMenuDrawer .org-drawer-submenu a{
   background:transparent!important;
   background-color:transparent!important;
   color:var(--theme-dropdown-text)!important;
@@ -426,7 +426,7 @@ details[open] > :not(summary) a:hover,
 .org-menu-dropdown a:hover,
 .nav-dropdown a:hover,
 .menu-dropdown a:hover,
-#orgMenuDrawer a:hover{
+#orgMenuDrawer .org-drawer-submenu a:hover{
   background:var(--theme-dropdown-hover)!important;
   background-color:var(--theme-dropdown-hover)!important;
   color:var(--theme-dropdown-text)!important;
@@ -848,4 +848,4 @@ main [class*="info"] strong {
 
 </style>
 
-{% endif %} 
+{% endif %}  

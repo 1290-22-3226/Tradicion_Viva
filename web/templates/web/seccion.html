@@ -333,6 +333,55 @@ style="background: var(--theme-accent, #d4af37);"
 .content-card:hover .content-card-media img {
     transform: none;
 }
+
+/* =====================================================
+   NUESTRAS IMÁGENES - TARJETAS MÁS ANCHAS
+   Solo afecta el apartado "Nuestras Imágenes".
+   La galería de fotos conserva su tamaño original.
+   ===================================================== */
+
+.content-grid--nuestras-imagenes {
+    width: 100% !important;
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)) !important;
+    gap: 24px !important;
+    justify-content: stretch !important;
+    align-items: start !important;
+}
+
+.content-grid--nuestras-imagenes .content-card {
+    width: 100% !important;
+    max-width: none !important;
+}
+
+.content-grid--nuestras-imagenes .content-card-media {
+    width: 100% !important;
+    height: 430px !important;
+    min-height: 430px !important;
+}
+
+.content-grid--nuestras-imagenes .content-card-body {
+    padding: 18px 20px 20px !important;
+}
+
+.content-grid--nuestras-imagenes .content-card h3 {
+    font-size: 20px !important;
+}
+
+.content-grid--nuestras-imagenes .content-card p {
+    font-size: 15px !important;
+    line-height: 1.65 !important;
+}
+
+@media (max-width: 768px) {
+    .content-grid--nuestras-imagenes {
+        grid-template-columns: 1fr !important;
+    }
+
+    .content-grid--nuestras-imagenes .content-card-media {
+        height: 380px !important;
+        min-height: 380px !important;
+    }
+}
   .image-credit-overlay {
     position: absolute;
     left: 0;
@@ -1469,7 +1518,7 @@ style="background: var(--theme-accent, #d4af37);"
 
       {% if imagenes %}
 
-        <div class="content-grid">
+        <div class="content-grid{% if seccion == "nuestras-imagenes" %} content-grid--nuestras-imagenes{% endif %}">
 
           {% for imagen in imagenes %}
 
@@ -3000,4 +3049,4 @@ style="background: var(--theme-accent, #d4af37);"
 
 </script>
 
-{% endblock %}   
+{% endblock %}    

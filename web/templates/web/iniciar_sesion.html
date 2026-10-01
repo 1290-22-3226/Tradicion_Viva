@@ -2,7 +2,7 @@
 
 {% block title %}Iniciar sesión | TRADICIÓN VIVA{% endblock %}
 
-{% block topbar_style %}style="background:#d4af37;"{% endblock %}
+{% block topbar_style %}style="background:var(--brand-primary);"{% endblock %}
 
 {% block header_actions %}{% endblock %}
 
@@ -19,23 +19,23 @@
   }
 
   .access-title h1{
-    font-size:34px;
-    margin:0 0 10px;
-    color:#fff;
-  }
+  font-size:34px;
+  margin:0 0 10px;
+  color:#2b2130;
+}
 
-  .access-title p{
-    color:#bdbdbd;
-    margin:0;
-    font-size:17px;
-  }
+ .access-title p{
+  color:#66596a;
+  margin:0;
+  font-size:17px;
+}
 
   .access-title::after{
     content:"";
     display:block;
     width:75px;
     height:3px;
-    background:#d4af37;
+    background:var(--brand-primary);
     margin:22px auto 0;
     border-radius:999px;
   }
@@ -46,25 +46,28 @@
     gap:20px;
   }
 
-  .access-card{
-    display:flex;
-    flex-direction:column;
-    gap:13px;
-    padding:30px;
-    border:1px solid #303030;
-    border-radius:14px;
-    background:#151515;
-    color:#fff;
-    text-decoration:none;
-    box-shadow:0 16px 34px rgba(0,0,0,.24);
-    transition:.2s;
-  }
+ .access-card{
+  display:flex;
+  flex-direction:column;
+  gap:13px;
+  padding:30px;
 
-  .access-card:hover{
-    transform:translateY(-3px);
-    border-color:#d4af37;
-    box-shadow:0 18px 40px rgba(0,0,0,.4);
-  }
+  border:1px solid #ddcfe3;
+  border-radius:14px;
+
+  background:#ffffff;
+  color:#2b2130;
+
+  text-decoration:none;
+  box-shadow:0 12px 28px rgba(66,25,78,.10);
+  transition:.2s;
+}
+
+ .access-card:hover{
+  transform:translateY(-3px);
+  border-color:var(--brand-primary);
+  box-shadow:0 16px 34px rgba(66,25,78,.16);
+}
 
   .access-icon{
     font-size:34px;
@@ -73,24 +76,24 @@
   .access-card h2{
     margin:0;
     font-size:24px;
-    color:#d4af37;
+    color:var(--brand-lilac);
   }
 
-  .access-card p{
-    margin:0;
-    color:#bbb;
-    line-height:1.55;
-    flex-grow:1;
-  }
+ .access-card p{
+  margin:0;
+  color:#66596a;
+  line-height:1.55;
+  flex-grow:1;
+}
 
   .access-button{
     margin-top:12px;
     display:inline-flex;
     justify-content:center;
     align-items:center;
-    background:#d4af37;
-    color:#000;
-    border:1px solid #d4af37;
+    background:var(--brand-primary);
+    color:#fff;
+    border:1px solid var(--brand-lilac);
     border-radius:8px;
     padding:13px 16px;
     font-weight:900;
@@ -98,8 +101,8 @@
   }
 
   .access-card:hover .access-button{
-    background:#c9a13b;
-    border-color:#c9a13b;
+    background:var(--brand-primary-deep);
+    border-color:var(--brand-primary-deep);
   }
 
   .back-home-wrapper{
@@ -108,22 +111,25 @@
   }
 
   .back-home{
-    display:inline-flex;
-    align-items:center;
-    justify-content:center;
-    padding:11px 22px;
-    border:1px solid #d4af37;
-    border-radius:8px;
-    background:#151515;
-    color:#d4af37;
-    font-weight:700;
-    text-decoration:none;
-    transition:.2s;
-  }
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  padding:11px 22px;
+
+  border:1px solid var(--brand-primary);
+  border-radius:8px;
+
+  background:#ffffff;
+  color:var(--brand-primary);
+
+  font-weight:700;
+  text-decoration:none;
+  transition:.2s;
+}
 
   .back-home:hover{
-    background:#d4af37;
-    color:#000;
+    background:var(--brand-primary);
+    color:#fff;
     transform:translateY(-1px);
   }
 

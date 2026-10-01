@@ -1,3 +1,4 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -6,6 +7,7 @@
   <title>{% block title %}TRADICIÓN VIVA{% endblock %}</title>
   <meta name="description" content="{% block meta_description %}Sistema de gestión procesional para hermandades y cofradías de Antigua Guatemala.{% endblock %}">
   <meta name="robots" content="index,follow">
+  <link rel="icon" type="image/png" href="{% static 'web/img/tradicion_viva_logo.png' %}">
   <link rel="canonical" href="{{ request.build_absolute_uri }}">
   {% block social_meta %}
     <meta property="og:type" content="website">
@@ -17,21 +19,30 @@
   {% endblock %}
 
   <style>
-    :root{
-      --bg:#0f0f10;
-      --panel:#151515;
-      --card:#1b1b1b;
-      --border:#2a2a2a;
-      --muted:#bdbdbd;
-      --white:#fff;
-      --gold:#d4af37;
-    }
+   :root{
+  --brand-primary:#743a8b;
+  --brand-primary-deep:#42194e;
+  --brand-lilac:#b88ac5;
+  --brand-cream:#ecd5ae;
+  --brand-sand:#cb9c64;
+  --brand-on-primary:#000000;
+
+  /* Tema claro */
+  --bg:#faf7fb;
+  --panel:#ffffff;
+  --card:#ffffff;
+  --border:#ddcfe3;
+  --muted:#66596a;
+  --white:#2b2130;
+
+  --gold:var(--brand-primary);
+}
 
     *{ box-sizing:border-box; }
 
     body{
       margin:0;
-      font-family:Arial, sans-serif;
+      font-family:"Times New Roman", Times, serif;
       background:var(--bg);
       color:var(--white);
       line-height:1.45;
@@ -40,15 +51,23 @@
       flex-direction:column;
     }
 
+    button,
+    input,
+    select,
+    textarea,
+    dialog{
+      font-family:"Times New Roman", Times, serif;
+    }
+
     a{ color:inherit; text-decoration:none; }
     img{ max-width:100%; }
 
-    .topbar{ height:4px; background:var(--gold); }
+    .topbar{ height:5px; background:linear-gradient(90deg,var(--brand-primary-deep),var(--brand-primary),var(--brand-lilac),var(--brand-cream)); }
 
-    header{
-      background:#000;
-      border-bottom:1px solid #1f1f1f;
-    }
+   header{
+  background:#a441a6;
+  border-bottom:1px solid #e5d9e8;
+}
 
     .header-inner{
       max-width:1200px;
@@ -73,18 +92,53 @@
     }
 
 
-    .session-link{
-      position:absolute;right:16px;top:50%;transform:translateY(-50%);
-      display:inline-flex;align-items:center;gap:8px;padding:10px 14px;border-radius:999px;
-      border:1px solid #333;background:#111;color:#fff;font-size:14px;font-weight:800;text-decoration:none;
-    }
-    .session-link:hover{border-color:var(--gold);color:#fff;}
+   .session-link{
+  position:absolute;
+  right:16px;
+  top:50%;
+  transform:translateY(-50%);
+  display:inline-flex;
+  align-items:center;
+  gap:8px;
+  padding:10px 14px;
+  border-radius:999px;
+
+  border:1px solid var(--brand-lilac);
+  background:#ffffff;
+  color:var(--brand-primary-deep);
+
+  font-size:14px;
+  font-weight:800;
+  text-decoration:none;
+  transition:.18s ease;
+}
+
+.session-link:hover{
+  border-color:var(--brand-primary);
+  background:#f3eaf6;
+  color:var(--brand-primary-deep);
+}
+
+    .brand-home{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  gap:12px;
+  color:var(--brand-primary-deep);
+  text-decoration:none;
+}
+
+.brand-home:hover{
+  color:var(--brand-primary);
+}
 
     .brand-logo{
-      height:45px;
-      width:auto;
+      height:54px;
+      width:54px;
       object-fit:contain;
       display:block;
+      flex:0 0 auto;
+      filter:drop-shadow(0 4px 8px rgba(0,0,0,.3));
     }
 
     .container{
@@ -256,6 +310,21 @@
       cursor:pointer;
       list-style:none;
     }
+
+    /* Inicio y Agenda son enlaces simples, pero visualmente deben
+       comportarse igual que los summary del menú responsive. */
+    .org-drawer-links > a.org-drawer-main-link{
+      display:flex;
+      align-items:center;
+      width:100%;
+      min-height:70px;
+      padding:14px 18px;
+      background:var(--theme-button, #111);
+      color:var(--theme-button-text, #fff);
+      border:1px solid var(--theme-accent-strong, #333);
+      border-radius:0;
+      text-decoration:none;
+    }
     .org-drawer-links summary::-webkit-details-marker{ display:none; }
     .org-drawer-links summary{ position:relative; padding-right:34px; }
     .org-drawer-links summary::after{ content:'⌄'; position:absolute; right:0; top:12px; color:#fff; font-size:24px; transition:transform .2s; }
@@ -271,7 +340,12 @@
     .message.success{ background:#15321d; border-color:#2f7040; color:#d9ffe1; }
     .message.error{ background:#3a1717; border-color:#8f3b3b; color:#ffe2e2; }
 
-    footer{ border-top:1px solid #222; background:#0b0b0b; color:#aaa; flex-shrink:0; }
+    footer{
+      border-top:1px solid var(--theme-border, #dfa3ef);
+      background:var(--theme-topbar, #573264);
+      color:var(--theme-text, #e5dde7);
+      flex-shrink:0;
+    }
     .footer-inner{
       max-width:1200px;
       margin:auto;
@@ -281,6 +355,7 @@
       justify-content:space-between;
       gap:16px;
       flex-wrap:wrap;
+      color:inherit;
     }
 
     @media (max-width:1050px){
@@ -302,6 +377,12 @@
     @media (max-width:560px){
       .org-menu-drawer{ width:92vw; padding:18px 18px 28px; }
       .org-drawer-links>a,.org-drawer-links summary{ font-size:21px; padding:13px 0; }
+      .org-drawer-links > a.org-drawer-main-link,
+      .org-drawer-links > details > summary{
+        min-height:62px;
+        padding:13px 16px !important;
+      }
+      .org-drawer-links > details > summary{ padding-right:44px !important; }
       .org-drawer-brand span{ display:none; }
     }
   </style>
@@ -314,7 +395,12 @@
   <header>
     <div class="header-inner">
       <div class="brand">
-        {% block brand %}<span>TRADICIÓN VIVA</span>{% endblock %}
+        {% block brand %}
+          <a class="brand-home" href="{% url 'web:home' %}" aria-label="Ir al inicio de TRADICIÓN VIVA">
+            <img class="brand-logo" src="{% static 'web/img/tradicion_viva_logo.png' %}" alt="Logo de TRADICIÓN VIVA">
+            <span>TRADICIÓN VIVA</span>
+          </a>
+        {% endblock %}
       </div>
       {% block header_actions %}
         <a class="session-link" href="{% url 'web:iniciar_sesion' %}">🔒 Iniciar sesión</a>
@@ -341,3 +427,4 @@
   </footer>
 </body>
 </html>
+ 

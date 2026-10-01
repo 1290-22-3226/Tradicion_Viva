@@ -14,3 +14,8 @@ __pycache__/
 .DS_Store
 Thumbs.db
 .env.bak
+
+*.sqlite3
+respaldo*.json
+db_respaldo*.sqlite3
+backups/ 

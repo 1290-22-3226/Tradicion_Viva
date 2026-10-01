@@ -162,27 +162,66 @@
 }
 
 
-/* Inicio y Agenda móvil */
-.org-drawer-links > a {
+/* =========================================================
+   INICIO Y AGENDA EN CUADRO - CORRECCIÓN DEFINITIVA
+   Se usa #orgMenuDrawer para superar las reglas generales
+   del tema que anteriormente dejaban los enlaces transparentes.
+   ========================================================= */
+#orgMenuDrawer .org-drawer-links > a {
+    display: flex !important;
+    align-items: center !important;
+    width: 100% !important;
+    min-height: 78px !important;
+    margin: 0 !important;
+    padding: 15px 20px !important;
+
     background: var(--theme-button) !important;
     background-color: var(--theme-button) !important;
-
     color: var(--theme-button-text) !important;
 
     border: 1px solid var(--theme-accent-strong) !important;
+    border-radius: 0 !important;
+    opacity: 1 !important;
+    box-shadow: none !important;
+    text-decoration: none !important;
+
+    font-family: "Times New Roman", Times, serif !important;
+    font-size: 25px !important;
+    font-weight: 800 !important;
+    line-height: 1.2 !important;
+}
+
+#orgMenuDrawer .org-drawer-links > a:hover,
+#orgMenuDrawer .org-drawer-links > a:focus {
+    background: var(--theme-button-hover) !important;
+    background-color: var(--theme-button-hover) !important;
+    color: var(--theme-button-text) !important;
+    border-color: var(--theme-accent-strong) !important;
 }
 
 
 /* Cofradía, Multimedia, Recorrido y Devotos móvil */
-.org-drawer-links details > summary {
+#orgMenuDrawer .org-drawer-links > details > summary {
+    display: flex !important;
+    align-items: center !important;
+    width: 100% !important;
+    min-height: 78px !important;
+    margin: 0 !important;
+    padding: 15px 48px 15px 20px !important;
+
     background: var(--theme-button) !important;
     background-color: var(--theme-button) !important;
-
     color: var(--theme-button-text) !important;
 
     border: 1px solid var(--theme-accent-strong) !important;
-
+    border-radius: 0 !important;
     opacity: 1 !important;
+    box-shadow: none !important;
+
+    font-family: "Times New Roman", Times, serif !important;
+    font-size: 25px !important;
+    font-weight: 800 !important;
+    line-height: 1.2 !important;
 }
 
 
@@ -729,4 +768,4 @@
     );
 
 })();
-</script> 
+</script>  

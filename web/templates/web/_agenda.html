@@ -2,7 +2,7 @@
   <p>Consulta las actividades programadas de {{ h.nombre }}. Selecciona una actividad para ver sus detalles.</p>
 </div>
 
-<div class="agenda-app" id="agendaApp" style="--agenda-accent:{{ h.color_acento|default:'#d4af37' }}">
+<div class="agenda-app" id="agendaApp" style="--agenda-accent:var(--theme-accent, {{ h.color_acento|default:'#d4af37' }}); --agenda-accent-strong:var(--theme-accent-strong, {{ h.color_acento|default:'#b08d57' }}); --agenda-on-accent:var(--theme-on-accent, #ffffff);">
   <div class="agenda-toolbar">
     <h2 id="agendaTitle">{{ agenda_mes_titulo }}</h2>
     <div class="agenda-actions">
@@ -11,14 +11,12 @@
         <button type="button" data-view="week">Semana</button>
         <button type="button" data-view="day">Día</button>
       </div>
-      <button type="button" id="agendaToday">Hoy</button>
       <button type="button" id="agendaPrev" aria-label="Anterior">‹</button>
       <button type="button" id="agendaNext" aria-label="Siguiente">›</button>
     </div>
   </div>
   <div id="agendaCalendar" class="agenda-calendar" aria-live="polite">
-    <div class="agenda-month agenda-fallback" data-calendar-fallback>
-      <div class="agenda-weekday">Lun.</div>
+    <div class="agenda-mont
       <div class="agenda-weekday">Mar.</div>
       <div class="agenda-weekday">Mié.</div>
       <div class="agenda-weekday">Jue.</div>
@@ -27,7 +25,7 @@
       <div class="agenda-weekday">Dom.</div>
       {% for semana in agenda_semanas %}
         {% for dia in semana %}
-          <div class="agenda-daycell{% if not dia.mes_actual %} other{% endif %}{% if dia.es_hoy %} today{% endif %}" data-date="{{ dia.fecha }}">
+          <div class="agenda-daycell{% if not dia.mes_actual %} other{% endif %}{% if dia.es_hoy %} today{% endif %}" data-date="{{ dia.fecha }}"{% if dia.es_hoy %} aria-current="date"{% endif %}>
             <div class="agenda-day-number">{{ dia.numero }}</div>
             {% for evento in dia.eventos %}
               <span class="agenda-event agenda-event-static">{% if evento.hora %}{{ evento.hora }} {% endif %}{{ evento.titulo }}</span>
@@ -52,12 +50,389 @@
 {{ eventos_agenda|json_script:"agenda-data" }}
 
 <style>
-.agenda-intro{text-align:center;margin:0 auto 26px;max-width:760px}.agenda-intro h3{font-size:34px;margin:0 0 10px}.agenda-intro p{color:#c8c8c8;margin:0}.agenda-app{background:#f7f7f7;color:#181818;border-radius:14px;padding:18px;box-shadow:0 16px 40px rgba(0,0,0,.32)}
-.agenda-toolbar{display:flex;justify-content:space-between;gap:18px;align-items:center;margin-bottom:14px}.agenda-toolbar h2{margin:0;font-size:26px;font-weight:500}.agenda-actions{display:flex;gap:6px;align-items:center}.agenda-actions button{border:1px solid #cfcfcf;background:#ededed;color:#222;border-radius:4px;padding:7px 12px;cursor:pointer;font-weight:700}.agenda-actions button:hover,.agenda-actions button.active{border-color:#222;background:#dedede}.agenda-views{display:flex}.agenda-views button{border-radius:0}.agenda-views button:first-child{border-radius:4px 0 0 4px}.agenda-views button:last-child{border-radius:0 4px 4px 0}
-.agenda-calendar{border:1px solid #d5d5d5;background:white;min-height:520px;overflow:auto}.agenda-month{display:grid;grid-template-columns:repeat(7,minmax(110px,1fr))}.agenda-weekday{background:#111;color:#fff;text-align:center;font-weight:800;padding:8px;border-right:1px solid #444}.agenda-daycell{min-height:112px;border-right:1px solid #ddd;border-bottom:1px solid #ddd;padding:6px;background:#fff}.agenda-daycell.other{color:#aaa;background:#fafafa}.agenda-daycell.today{background:#fffbe5}.agenda-day-number{text-align:right;font-size:12px;margin-bottom:5px}.agenda-event{display:block;width:100%;border:0;border-left:4px solid var(--agenda-accent);background:#202020;color:#fff;padding:5px 7px;margin:4px 0;border-radius:3px;text-align:left;font-size:12px;cursor:pointer;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.agenda-event:hover{filter:brightness(1.2)}.agenda-event-static{cursor:default}.agenda-noscript{margin:12px 0 0;color:#555;text-align:center;font-size:13px}
-.agenda-time-grid{min-width:760px}.agenda-time-head{display:grid;background:#111;color:#fff;font-weight:800;text-align:center}.agenda-time-head.week{grid-template-columns:62px repeat(7,1fr)}.agenda-time-head.day{grid-template-columns:62px 1fr}.agenda-time-head>div{padding:8px;border-right:1px solid #444}.agenda-all-day{display:grid;border-bottom:1px solid #ddd}.agenda-all-day.week{grid-template-columns:62px repeat(7,1fr)}.agenda-all-day.day{grid-template-columns:62px 1fr}.agenda-all-day>div{min-height:40px;border-right:1px solid #ddd;padding:4px}.agenda-hours{position:relative}.agenda-hour-row{display:grid;min-height:62px;border-bottom:1px solid #ddd}.agenda-hour-row.week{grid-template-columns:62px repeat(7,1fr)}.agenda-hour-row.day{grid-template-columns:62px 1fr}.agenda-hour-label{font-size:12px;text-align:right;padding:4px 8px;color:#666}.agenda-hour-slot{border-left:1px solid #ddd;padding:2px;min-width:0}.agenda-empty{display:flex;align-items:center;justify-content:center;min-height:520px;color:#777;font-size:16px}
-.agenda-dialog{width:min(520px,92vw);border:1px solid #444;border-radius:16px;background:#151515;color:#fff;padding:28px;box-shadow:0 24px 70px rgba(0,0,0,.6)}.agenda-dialog::backdrop{background:rgba(0,0,0,.72)}.agenda-dialog-close{position:absolute;right:14px;top:10px;border:0;background:transparent;color:white;font-size:28px;cursor:pointer}.agenda-dialog-kicker{color:var(--agenda-accent,#d4af37);font-size:12px;text-transform:uppercase;font-weight:900;letter-spacing:.12em}.agenda-dialog h3{font-size:26px;margin:8px 0}.agenda-dialog-date,.agenda-dialog-location{color:#ddd;margin:7px 0}
-@media(max-width:760px){.agenda-toolbar{align-items:flex-start;flex-direction:column}.agenda-actions{flex-wrap:wrap}.agenda-toolbar h2{font-size:22px}.agenda-app{padding:10px}.agenda-month{min-width:760px}.agenda-daycell{min-height:95px}.agenda-calendar{min-height:470px}}
+  .agenda-intro {
+    max-width: 760px;
+    margin: 0 auto 26px;
+    text-align: center;
+    font-family: "Times New Roman", Times, serif;
+  }
+
+  .agenda-intro h3 {
+    margin: 0 0 10px;
+    font-size: 34px;
+  }
+
+  .agenda-intro p {
+    margin: 0;
+    color: var(--theme-muted, #c8c8c8);
+  }
+
+  .agenda-app {
+    --agenda-surface: var(--theme-surface, #ffffff);
+    --agenda-surface-2: var(--theme-surface-2, #f3f3f3);
+    --agenda-text: var(--theme-text, #181818);
+    --agenda-muted: var(--theme-muted, #666666);
+    --agenda-border: var(--theme-border, #d5d5d5);
+
+    padding: 18px;
+    border: 1px solid var(--agenda-border);
+    border-radius: 14px;
+    background: var(--agenda-surface);
+    color: var(--agenda-text);
+    box-shadow: 0 16px 40px var(--theme-shadow, rgba(0, 0, 0, .22));
+    font-family: "Times New Roman", Times, serif;
+  }
+
+  .agenda-app button,
+  .agenda-dialog,
+  .agenda-dialog button {
+    font-family: "Times New Roman", Times, serif;
+  }
+
+  .agenda-toolbar {
+    display: flex;
+    justify-content: space-between;
+    gap: 18px;
+    align-items: center;
+    margin-bottom: 14px;
+  }
+
+  .agenda-toolbar h2 {
+    margin: 0;
+    color: var(--agenda-text);
+    font-size: 26px;
+    font-weight: 700;
+  }
+
+  .agenda-actions {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+  }
+
+  .agenda-actions button {
+    padding: 7px 12px;
+    border: 1px solid var(--agenda-border);
+    border-radius: 4px;
+    background: var(--agenda-surface-2);
+    color: var(--agenda-text);
+    cursor: pointer;
+    font-weight: 700;
+    transition: background .18s ease, color .18s ease, border-color .18s ease, transform .18s ease;
+  }
+
+  .agenda-actions button:hover {
+    border-color: var(--agenda-accent);
+    color: var(--agenda-accent-strong);
+    transform: translateY(-1px);
+  }
+
+  .agenda-actions button.active,
+  .agenda-actions button.active:hover {
+    border-color: var(--agenda-accent);
+    background: var(--agenda-accent);
+    color: var(--agenda-on-accent);
+  }
+
+  .agenda-views {
+    display: flex;
+  }
+
+  .agenda-views button {
+    border-radius: 0;
+  }
+
+  .agenda-views button:first-child {
+    border-radius: 4px 0 0 4px;
+  }
+
+  .agenda-views button:last-child {
+    border-radius: 0 4px 4px 0;
+  }
+
+  .agenda-calendar {
+    min-height: 520px;
+    overflow: auto;
+    border: 1px solid var(--agenda-border);
+    background: var(--agenda-surface);
+  }
+
+  .agenda-month {
+    display: grid;
+    grid-template-columns: repeat(7, minmax(110px, 1fr));
+  }
+
+  .agenda-weekday {
+    padding: 8px;
+    border-right: 1px solid var(--agenda-accent-strong);
+    background: var(--agenda-accent);
+    color: var(--agenda-on-accent);
+    text-align: center;
+    font-weight: 800;
+  }
+
+  .agenda-weekday:last-child {
+    border-right: 0;
+  }
+
+  .agenda-daycell {
+    min-height: 112px;
+    padding: 6px;
+    border-right: 1px solid var(--agenda-border);
+    border-bottom: 1px solid var(--agenda-border);
+    background: var(--agenda-surface);
+    color: var(--agenda-text);
+    transition: background .18s ease, color .18s ease, box-shadow .18s ease;
+  }
+
+  .agenda-daycell.other {
+    background: var(--agenda-surface-2);
+    color: var(--agenda-muted);
+    opacity: .72;
+  }
+
+  /* El día actual usa el color institucional de la hermandad/cofradía. */
+  .agenda-daycell.today {
+    position: relative;
+    z-index: 1;
+    background: var(--agenda-accent);
+    color: var(--agenda-on-accent);
+    box-shadow: inset 0 0 0 2px var(--agenda-accent-strong);
+    opacity: 1;
+  }
+
+  .agenda-daycell.today .agenda-day-number {
+    font-size: 14px;
+    font-weight: 900;
+  }
+
+  .agenda-day-number {
+    margin-bottom: 5px;
+    text-align: right;
+    font-size: 12px;
+  }
+
+  .agenda-event {
+    display: block;
+    width: 100%;
+    margin: 4px 0;
+    padding: 5px 7px;
+    overflow: hidden;
+    border: 0;
+    border-left: 4px solid var(--agenda-accent-strong);
+    border-radius: 3px;
+    background: var(--agenda-accent);
+    color: var(--agenda-on-accent);
+    text-align: left;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+  }
+
+  .agenda-event:hover {
+    filter: brightness(1.08);
+  }
+
+  /* Mantiene visibles los eventos cuando la casilla de hoy ya usa el acento. */
+  .agenda-daycell.today .agenda-event {
+    border-left-color: var(--agenda-accent-strong);
+    background: var(--agenda-surface);
+    color: var(--agenda-text);
+  }
+
+  .agenda-event-static {
+    cursor: default;
+  }
+
+  .agenda-noscript {
+    margin: 12px 0 0;
+    color: var(--agenda-muted);
+    text-align: center;
+    font-size: 13px;
+  }
+
+  .agenda-time-grid {
+    min-width: 760px;
+    background: var(--agenda-surface);
+    color: var(--agenda-text);
+  }
+
+  .agenda-time-head {
+    display: grid;
+    background: var(--agenda-accent);
+    color: var(--agenda-on-accent);
+    text-align: center;
+    font-weight: 800;
+  }
+
+  .agenda-time-head.week {
+    grid-template-columns: 62px repeat(7, 1fr);
+  }
+
+  .agenda-time-head.day {
+    grid-template-columns: 62px 1fr;
+  }
+
+  .agenda-time-head > div {
+    padding: 8px;
+    border-right: 1px solid var(--agenda-accent-strong);
+  }
+
+  .agenda-time-head > div.today {
+    background: var(--agenda-accent-strong);
+    color: var(--agenda-on-accent);
+    box-shadow: inset 0 -3px 0 var(--agenda-on-accent);
+  }
+
+  .agenda-all-day {
+    display: grid;
+    border-bottom: 1px solid var(--agenda-border);
+    background: var(--agenda-surface);
+  }
+
+  .agenda-all-day.week {
+    grid-template-columns: 62px repeat(7, 1fr);
+  }
+
+  .agenda-all-day.day {
+    grid-template-columns: 62px 1fr;
+  }
+
+  .agenda-all-day > div {
+    min-height: 40px;
+    padding: 4px;
+    border-right: 1px solid var(--agenda-border);
+  }
+
+  .agenda-all-day > div:first-child {
+    color: var(--agenda-muted);
+  }
+
+  .agenda-hours {
+    position: relative;
+  }
+
+  .agenda-hour-row {
+    display: grid;
+    min-height: 62px;
+    border-bottom: 1px solid var(--agenda-border);
+  }
+
+  .agenda-hour-row.week {
+    grid-template-columns: 62px repeat(7, 1fr);
+  }
+
+  .agenda-hour-row.day {
+    grid-template-columns: 62px 1fr;
+  }
+
+  .agenda-hour-label {
+    padding: 4px 8px;
+    color: var(--agenda-muted);
+    text-align: right;
+    font-size: 12px;
+  }
+
+  .agenda-hour-slot {
+    min-width: 0;
+    padding: 2px;
+    border-left: 1px solid var(--agenda-border);
+    background: var(--agenda-surface);
+  }
+
+  .agenda-all-day > .today-column,
+  .agenda-hour-slot.today-column {
+    background: var(--agenda-surface-2);
+    box-shadow: inset 3px 0 0 var(--agenda-accent);
+  }
+
+  .agenda-empty {
+    display: flex;
+    min-height: 520px;
+    align-items: center;
+    justify-content: center;
+    background: var(--agenda-surface);
+    color: var(--agenda-muted);
+    font-size: 16px;
+  }
+
+  .agenda-dialog {
+    width: min(520px, 92vw);
+    padding: 28px;
+    border: 2px solid var(--agenda-accent, #d4af37);
+    border-radius: 16px;
+    background: var(--theme-surface, #151515);
+    color: var(--theme-text, #ffffff);
+    box-shadow: 0 24px 70px rgba(0, 0, 0, .60);
+  }
+
+  .agenda-dialog::backdrop {
+    background: rgba(0, 0, 0, .72);
+  }
+
+  .agenda-dialog-close {
+    position: absolute;
+    top: 10px;
+    right: 14px;
+    border: 0;
+    background: transparent;
+    color: var(--theme-text, #ffffff);
+    font-size: 28px;
+    cursor: pointer;
+  }
+
+  .agenda-dialog-kicker {
+    color: var(--agenda-accent, #d4af37);
+    text-transform: uppercase;
+    letter-spacing: .12em;
+    font-size: 12px;
+    font-weight: 900;
+  }
+
+  .agenda-dialog h3 {
+    margin: 8px 0;
+    color: var(--theme-text, #ffffff);
+    font-size: 26px;
+  }
+
+  .agenda-dialog-date,
+  .agenda-dialog-location {
+    margin: 7px 0;
+    color: var(--theme-muted, #dddddd);
+  }
+
+  @media (max-width: 760px) {
+    .agenda-toolbar {
+      align-items: flex-start;
+      flex-direction: column;
+    }
+
+    .agenda-actions {
+      flex-wrap: wrap;
+    }
+
+    .agenda-toolbar h2 {
+      font-size: 22px;
+    }
+
+    .agenda-app {
+      padding: 10px;
+    }
+
+    .agenda-month {
+      min-width: 760px;
+    }
+
+    .agenda-daycell {
+      min-height: 95px;
+    }
+
+    .agenda-calendar {
+      min-height: 470px;
+    }
+  }
 </style>
 
 <script>
@@ -76,9 +451,80 @@
   const fmtDate=e=>new Intl.DateTimeFormat('es-GT',{dateStyle:'full',timeStyle:e.allDay?undefined:'short'}).format(e.startDate);
   function eventButton(e){const b=document.createElement('button');b.className='agenda-event';b.type='button';b.textContent=(e.allDay?'':`${pad(e.startDate.getHours())}:${pad(e.startDate.getMinutes())} `)+e.title;b.onclick=()=>openEvent(e);return b}
   function openEvent(e){document.getElementById('agendaDialogTitle').textContent=e.title;document.getElementById('agendaDialogDate').textContent=fmtDate(e)+(e.endDate?' – '+new Intl.DateTimeFormat('es-GT',{dateStyle:'medium',timeStyle:e.allDay?undefined:'short'}).format(e.endDate):'');const loc=document.getElementById('agendaDialogLocation');loc.textContent=e.location?'Lugar: '+e.location:'';loc.hidden=!e.location;document.getElementById('agendaDialogDescription').textContent=e.description||'Sin descripción adicional.';dialog.showModal()}
-  function renderMonth(){title.textContent=`${months[current.getMonth()][0].toUpperCase()+months[current.getMonth()].slice(1)} ${current.getFullYear()}`;const wrap=document.createElement('div');wrap.className='agenda-month';['Lun.','Mar.','Mié.','Jue.','Vie.','Sáb.','Dom.'].forEach(d=>{const h=document.createElement('div');h.className='agenda-weekday';h.textContent=d;wrap.appendChild(h)});const first=new Date(current.getFullYear(),current.getMonth(),1,12);const start=mondayOf(first);for(let i=0;i<42;i++){const d=new Date(start);d.setDate(start.getDate()+i);const cell=document.createElement('div');cell.className='agenda-daycell'+(d.getMonth()!==current.getMonth()?' other':'')+(sameDay(d,new Date())?' today':'');const n=document.createElement('div');n.className='agenda-day-number';n.textContent=d.getDate();cell.appendChild(n);dayEvents(d).forEach(e=>cell.appendChild(eventButton(e)));wrap.appendChild(cell)}cal.replaceChildren(wrap)}
-  function renderTime(mode){const start=mode==='week'?mondayOf(current):new Date(current);const count=mode==='week'?7:1;title.textContent=mode==='week'?`${start.getDate()} – ${new Date(start.getFullYear(),start.getMonth(),start.getDate()+6).getDate()} de ${months[start.getMonth()]} de ${start.getFullYear()}`:`${current.getDate()} de ${months[current.getMonth()]} de ${current.getFullYear()}`;const grid=document.createElement('div');grid.className='agenda-time-grid';const head=document.createElement('div');head.className=`agenda-time-head ${mode}`;head.appendChild(document.createElement('div'));for(let i=0;i<count;i++){const d=new Date(start);d.setDate(start.getDate()+i);const x=document.createElement('div');x.textContent=mode==='week'?`${days[d.getDay()]} ${d.getDate()}/${d.getMonth()+1}`:days[d.getDay()].replace('.','');head.appendChild(x)}grid.appendChild(head);const all=document.createElement('div');all.className=`agenda-all-day ${mode}`;const lab=document.createElement('div');lab.textContent='Todo el día';all.appendChild(lab);for(let i=0;i<count;i++){const d=new Date(start);d.setDate(start.getDate()+i);const slot=document.createElement('div');dayEvents(d).filter(e=>e.allDay).forEach(e=>slot.appendChild(eventButton(e)));all.appendChild(slot)}grid.appendChild(all);const hours=document.createElement('div');hours.className='agenda-hours';for(let h=0;h<24;h++){const row=document.createElement('div');row.className=`agenda-hour-row ${mode}`;const l=document.createElement('div');l.className='agenda-hour-label';l.textContent=h;row.appendChild(l);for(let i=0;i<count;i++){const d=new Date(start);d.setDate(start.getDate()+i);const slot=document.createElement('div');slot.className='agenda-hour-slot';dayEvents(d).filter(e=>!e.allDay&&e.startDate.getHours()===h).forEach(e=>slot.appendChild(eventButton(e)));row.appendChild(slot)}hours.appendChild(row)}grid.appendChild(hours);cal.replaceChildren(grid);setTimeout(()=>{cal.scrollTop=Math.max(0,(new Date().getHours()-1)*62)},0)}
+  function renderMonth(){title.textContent=`${months[current.getMonth()][0].toUpperCase()+months[current.getMonth()].slice(1)} ${current.getFullYear()}`;const wrap=document.createElement('div');wrap.className='agenda-month';['Lun.','Mar.','Mié.','Jue.','Vie.','Sáb.','Dom.'].forEach(d=>{const h=document.createElement('div');h.className='agenda-weekday';h.textContent=d;wrap.appendChild(h)});const first=new Date(current.getFullYear(),current.getMonth(),1,12);const start=mondayOf(first);for(let i=0;i<42;i++){const d=new Date(start);d.setDate(start.getDate()+i);const cell=document.createElement('div');cell.className='agenda-daycell'+(d.getMonth()!==current.getMonth()?' other':'')+(sameDay(d,new Date())?' today':'');if(sameDay(d,new Date()))cell.setAttribute('aria-current','date');const n=document.createElement('div');n.className='agenda-day-number';n.textContent=d.getDate();cell.appendChild(n);dayEvents(d).forEach(e=>cell.appendChild(eventButton(e)));wrap.appendChild(cell)}cal.replaceChildren(wrap)}
+  function renderTime(mode){
+    const start=mode==='week'?mondayOf(current):new Date(current);
+    const count=mode==='week'?7:1;
+    title.textContent=mode==='week'
+      ?`${start.getDate()} – ${new Date(start.getFullYear(),start.getMonth(),start.getDate()+6).getDate()} de ${months[start.getMonth()]} de ${start.getFullYear()}`
+      :`${current.getDate()} de ${months[current.getMonth()]} de ${current.getFullYear()}`;
+
+    const grid=document.createElement('div');
+    grid.className='agenda-time-grid';
+
+    const head=document.createElement('div');
+    head.className=`agenda-time-head ${mode}`;
+    head.appendChild(document.createElement('div'));
+
+    for(let i=0;i<count;i++){
+      const d=new Date(start);
+      d.setDate(start.getDate()+i);
+      const x=document.createElement('div');
+      x.textContent=mode==='week'?`${days[d.getDay()]} ${d.getDate()}/${d.getMonth()+1}`:days[d.getDay()].replace('.','');
+      if(sameDay(d,new Date())){
+        x.classList.add('today');
+        x.setAttribute('aria-current','date');
+      }
+      head.appendChild(x);
+    }
+    grid.appendChild(head);
+
+    const all=document.createElement('div');
+    all.className=`agenda-all-day ${mode}`;
+    const lab=document.createElement('div');
+    lab.textContent='Todo el día';
+    all.appendChild(lab);
+
+    for(let i=0;i<count;i++){
+      const d=new Date(start);
+      d.setDate(start.getDate()+i);
+      const slot=document.createElement('div');
+      if(sameDay(d,new Date()))slot.classList.add('today-column');
+      dayEvents(d).filter(e=>e.allDay).forEach(e=>slot.appendChild(eventButton(e)));
+      all.appendChild(slot);
+    }
+    grid.appendChild(all);
+
+    const hours=document.createElement('div');
+    hours.className='agenda-hours';
+
+    for(let h=0;h<24;h++){
+      const row=document.createElement('div');
+      row.className=`agenda-hour-row ${mode}`;
+      const l=document.createElement('div');
+      l.className='agenda-hour-label';
+      l.textContent=h;
+      row.appendChild(l);
+
+      for(let i=0;i<count;i++){
+        const d=new Date(start);
+        d.setDate(start.getDate()+i);
+        const slot=document.createElement('div');
+        slot.className='agenda-hour-slot';
+        if(sameDay(d,new Date()))slot.classList.add('today-column');
+        dayEvents(d)
+          .filter(e=>!e.allDay&&e.startDate.getHours()===h)
+          .forEach(e=>slot.appendChild(eventButton(e)));
+        row.appendChild(slot);
+      }
+      hours.appendChild(row);
+    }
+
+    grid.appendChild(hours);
+    cal.replaceChildren(grid);
+    setTimeout(()=>{cal.scrollTop=Math.max(0,(new Date().getHours()-1)*62)},0);
+  }
   function render(){view==='month'?renderMonth():renderTime(view);document.querySelectorAll('[data-view]').forEach(b=>b.classList.toggle('active',b.dataset.view===view))}
-  document.querySelectorAll('[data-view]').forEach(b=>b.onclick=()=>{view=b.dataset.view;render()});document.getElementById('agendaToday').onclick=()=>{current=new Date();current.setHours(12,0,0,0);render()};document.getElementById('agendaPrev').onclick=()=>{if(view==='month')current.setMonth(current.getMonth()-1);else current.setDate(current.getDate()-(view==='week'?7:1));render()};document.getElementById('agendaNext').onclick=()=>{if(view==='month')current.setMonth(current.getMonth()+1);else current.setDate(current.getDate()+(view==='week'?7:1));render()};dialog.querySelector('.agenda-dialog-close').onclick=()=>dialog.close();dialog.addEventListener('click',e=>{if(e.target===dialog)dialog.close()});render();
+  document.querySelectorAll('[data-view]').forEach(b=>b.onclick=()=>{view=b.dataset.view;render()});document.getElementById('agendaPrev').onclick=()=>{if(view==='month')current.setMonth(current.getMonth()-1);else current.setDate(current.getDate()-(view==='week'?7:1));render()};document.getElementById('agendaNext').onclick=()=>{if(view==='month')current.setMonth(current.getMonth()+1);else current.setDate(current.getDate()+(view==='week'?7:1));render()};dialog.querySelector('.agenda-dialog-close').onclick=()=>dialog.close();dialog.addEventListener('click',e=>{if(e.target===dialog)dialog.close()});render();
 })();
-</script>
+</script> 

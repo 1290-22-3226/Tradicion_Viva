@@ -1,3 +1,4 @@
+import json
 from datetime import date, timedelta
 
 from django.contrib.auth import get_user_model
@@ -5,7 +6,15 @@ from django.test import TestCase, override_settings
 from django.urls import reverse
 from django.utils import timezone
 
-from hermandades.models import CuentaDevoto, Devoto, EventoAgenda, Hermandad, ImagenHermandad, TurnoRecorrido
+from hermandades.models import (
+    AdministradorOrganizacion,
+    CuentaDevoto,
+    Devoto,
+    EventoAgenda,
+    Hermandad,
+    ImagenHermandad,
+    TurnoRecorrido,
+)
 
 
 class BaseProjectTestCase(TestCase):
@@ -16,6 +25,99 @@ class BaseProjectTestCase(TestCase):
             ciudad="Antigua Guatemala",
             slug="cofradia-prueba",
             activa=True,
+        )
+
+
+class AuthenticationApiTests(BaseProjectTestCase):
+    def setUp(self):
+        super().setUp()
+        self.account = CuentaDevoto.objects.create(correo="devoto@example.com")
+        self.account.set_password("ClaveSegura123")
+        self.account.save()
+
+    def test_api_login_returns_access_and_refresh_tokens(self):
+        response = self.client.post(
+            reverse("web:api_auth_login"),
+            data=json.dumps({"email": "devoto@example.com", "password": "ClaveSegura123"}),
+            content_type="application/json",
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("accessToken", response.json()["tokens"])
+        self.assertIn("refreshToken", response.json()["tokens"])
+
+    def test_api_me_accepts_access_token(self):
+        login_response = self.client.post(
+            reverse("web:api_auth_login"),
+            data=json.dumps({"email": "devoto@example.com", "password": "ClaveSegura123"}),
+            content_type="application/json",
+        )
+        access_token = login_response.json()["tokens"]["accessToken"]
+
+        response = self.client.get(
+            reverse("web:api_auth_me"),
+            HTTP_AUTHORIZATION=f"Bearer {access_token}",
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()["user"]["email"], "devoto@example.com")
+
+
+class OrganizationIsolationTests(TestCase):
+    def setUp(self):
+        self.organization_a = Hermandad.objects.create(
+            nombre="Hermandad A",
+            slug="hermandad-a",
+        )
+        self.organization_b = Hermandad.objects.create(
+            nombre="Cofradía B",
+            slug="cofradia-b",
+        )
+        self.user = get_user_model().objects.create_user(
+            username="admin-a",
+            password="ClaveAdmin123",
+            is_staff=True,
+            is_active=True,
+        )
+        AdministradorOrganizacion.objects.create(
+            usuario=self.user,
+            hermandad=self.organization_a,
+            activo=True,
+        )
+        now = timezone.now()
+        self.event_a = EventoAgenda.objects.create(
+            hermandad=self.organization_a,
+            titulo="Evento de A",
+            inicio=now,
+        )
+        self.event_b = EventoAgenda.objects.create(
+            hermandad=self.organization_b,
+            titulo="Evento de B",
+            inicio=now,
+        )
+
+    def test_admin_list_only_contains_assigned_organization(self):
+        self.assertTrue(self.client.login(username="admin-a", password="ClaveAdmin123"))
+
+        response = self.client.get(reverse("admin:hermandades_eventoagenda_changelist"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, self.event_a.titulo)
+        self.assertNotContains(response, self.event_b.titulo)
+
+    def test_admin_cannot_open_other_organization_record_by_id(self):
+        self.assertTrue(self.client.login(username="admin-a", password="ClaveAdmin123"))
+
+        response = self.client.get(
+            reverse(
+                "admin:hermandades_eventoagenda_change",
+                args=[self.event_b.pk],
+            )
+        )
+
+        self.assertRedirects(
+            response,
+            reverse("admin:index"),
         )
 
 
@@ -138,6 +240,26 @@ class PublicViewsTests(BaseProjectTestCase):
         self.assertContains(
             response, reverse("web:seguimiento", kwargs={"slug": self.hermandad.slug})
         )
+
+    def test_tracking_hides_empty_optional_turn_fields(self):
+        TurnoRecorrido.objects.create(
+            hermandad=self.hermandad,
+            numero=1,
+            nombre_turno="Turno inicial",
+            pieza="Marcha de prueba",
+            latitud=14.5566,
+            longitud=-90.7332,
+            orden_ruta=1,
+        )
+
+        response = self.client.get(
+            reverse("web:seguimiento", kwargs={"slug": self.hermandad.slug})
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'id="datoGenero" hidden')
+        self.assertContains(response, "const DISTANCIA_DETECCION_TURNO_METROS = 5")
+        self.assertNotContains(response, "turnoMasCercano")
 
     def test_agenda_only_exposes_active_events(self):
         now = timezone.now()
@@ -262,6 +384,7 @@ class AdminOnlyEditorTests(BaseProjectTestCase):
             password="test-password-123",
             is_staff=True,
         )
+        AdministradorOrganizacion.objects.create(usuario=user, hermandad=self.hermandad)
         self.client.force_login(user)
         TurnoRecorrido.objects.create(
             hermandad=self.hermandad,
@@ -289,6 +412,7 @@ class AdminOnlyEditorTests(BaseProjectTestCase):
             password="test-password-123",
             is_staff=True,
         )
+        AdministradorOrganizacion.objects.create(usuario=user, hermandad=nueva)
         self.client.force_login(user)
         response = self.client.get(reverse("web:editor_turnos", kwargs={"slug": nueva.slug}))
         self.assertEqual(response.status_code, 200)
@@ -307,10 +431,28 @@ class AdminOnlyEditorTests(BaseProjectTestCase):
             password="test-password-123",
             is_staff=True,
         )
+        AdministradorOrganizacion.objects.create(usuario=user, hermandad=nueva)
         self.client.force_login(user)
         response = self.client.get(reverse("web:editor_turnos", kwargs={"slug": nueva.slug}))
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, nueva.nombre)
+
+    def test_staff_user_cannot_open_editor_of_another_organization(self):
+        otra = Hermandad.objects.create(
+            nombre="Otra organización",
+            slug="otra-organizacion",
+            activa=True,
+        )
+        user = get_user_model().objects.create_user(
+            username="staff-limitado",
+            password="test-password-123",
+            is_staff=True,
+        )
+        AdministradorOrganizacion.objects.create(usuario=user, hermandad=self.hermandad)
+        self.client.force_login(user)
+
+        response = self.client.get(reverse("web:editor_turnos", kwargs={"slug": otra.slug}))
+        self.assertEqual(response.status_code, 403)
 
     def test_editor_link_is_hidden_from_public_navigation_even_for_staff(self):
         user = get_user_model().objects.create_user(
@@ -337,6 +479,7 @@ class AdminOnlyEditorTests(BaseProjectTestCase):
             password="test-password-123",
             is_staff=True,
         )
+        AdministradorOrganizacion.objects.create(usuario=user, hermandad=soledad)
         self.client.force_login(user)
         response = self.client.get(
             "/Hermandad-de-la-consagrada-y-venerada-imagen-de-la-santisima-virgen-de-soledad/editor-turnos/"

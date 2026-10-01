@@ -57,6 +57,8 @@ if not SECRET_KEY:
 DEBUG = env_bool("DEBUG", default=False)
 TESTING = "test" in sys.argv
 
+JWT_SECRET_KEY = os.environ.get("JWT_SECRET_KEY", SECRET_KEY).strip()
+
 ALLOWED_HOSTS = env_list("ALLOWED_HOSTS", ["127.0.0.1", "localhost"])
 render_hostname = os.environ.get("RENDER_EXTERNAL_HOSTNAME", "").strip()
 if render_hostname and render_hostname not in ALLOWED_HOSTS:
@@ -81,6 +83,7 @@ MIDDLEWARE = [
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
+    "web.middleware.OrganizationContextMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
@@ -104,13 +107,42 @@ TEMPLATES = [
 
 WSGI_APPLICATION = "config.wsgi.application"
 
-DATABASES = {
-    "default": dj_database_url.config(
-        default=f"sqlite:///{BASE_DIR / 'db.sqlite3'}",
-        conn_max_age=600,
-        conn_health_checks=True,
-    )
-}
+database_url = os.environ.get("DATABASE_URL", "").strip()
+postgres_database = os.environ.get("PGDATABASE", "").strip()
+
+if database_url:
+    DATABASES = {
+        "default": dj_database_url.parse(
+            database_url,
+            conn_max_age=600,
+            conn_health_checks=True,
+            ssl_require=env_bool("DATABASE_SSL_REQUIRE", default=not DEBUG),
+        )
+    }
+elif postgres_database:
+    DATABASES = {
+        "default": {
+            "ENGINE": "django.db.backends.postgresql",
+            "NAME": postgres_database,
+            "USER": os.environ.get("PGUSER", "").strip(),
+            "PASSWORD": os.environ.get("PGPASSWORD", ""),
+            "HOST": os.environ.get("PGHOST", "127.0.0.1").strip(),
+            "PORT": os.environ.get("PGPORT", "5432").strip(),
+            "CONN_MAX_AGE": 600,
+            "CONN_HEALTH_CHECKS": True,
+            "OPTIONS": {
+                "sslmode": os.environ.get("PGSSLMODE", "prefer").strip(),
+            },
+        }
+    }
+else:
+    DATABASES = {
+        "default": dj_database_url.config(
+            default=f"sqlite:///{BASE_DIR / 'db.sqlite3'}",
+            conn_max_age=600,
+            conn_health_checks=True,
+        )
+    }
 
 LANGUAGE_CODE = "es-gt"
 TIME_ZONE = "America/Guatemala"
@@ -150,7 +182,7 @@ if render_hostname:
 # Cabeceras y cookies seguras. En desarrollo local se mantienen compatibles con HTTP.
 SECURE_CONTENT_TYPE_NOSNIFF = True
 X_FRAME_OPTIONS = "DENY"
-SECURE_REFERRER_POLICY = "same-origin"
+SECURE_REFERRER_POLICY = "strict-origin-when-cross-origin"
 SESSION_COOKIE_HTTPONLY = True
 CSRF_COOKIE_HTTPONLY = True
 SESSION_COOKIE_SAMESITE = "Lax"

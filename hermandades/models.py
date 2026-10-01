@@ -2,6 +2,7 @@ from io import BytesIO
 from pathlib import Path
 from urllib.parse import parse_qs, urlparse
 
+from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.core.files.base import ContentFile
 from django.core.validators import FileExtensionValidator, RegexValidator
@@ -120,6 +121,38 @@ class Hermandad(models.Model):
 
     def get_absolute_url(self):
         return reverse("web:hermandad_detalle", kwargs={"slug": self.slug})
+
+
+class AdministradorOrganizacion(models.Model):
+    """Asigna un usuario administrativo a una sola hermandad o cofradía.
+
+    Los superusuarios conservan acceso global. Los usuarios administrativos
+    normales quedan limitados a la organización indicada en esta asignación.
+    """
+
+    usuario = models.OneToOneField(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="asignacion_organizacion",
+        verbose_name="usuario administrativo",
+    )
+    hermandad = models.ForeignKey(
+        Hermandad,
+        on_delete=models.CASCADE,
+        related_name="administradores_asignados",
+        verbose_name="hermandad o cofradía",
+    )
+    activo = models.BooleanField(default=True)
+    creado_en = models.DateTimeField(auto_now_add=True)
+    actualizado_en = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["hermandad__nombre", "usuario__username"]
+        verbose_name = "asignación de administrador"
+        verbose_name_plural = "asignaciones de administradores"
+
+    def __str__(self):
+        return f"{self.usuario.get_username()} → {self.hermandad.nombre}"
 
 
 class TurnoRecorrido(models.Model):

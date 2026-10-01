@@ -39,9 +39,9 @@ echo Verificando el proyecto...
 if errorlevel 1 goto :error
 
 echo.
-echo Abriendo TRADICION VIVA en http://127.0.0.1:8000/
+echo Abriendo TRADICION VIVA en http://127.0.0.1:9000/
 echo Para detener el servidor presiona Ctrl+C.
-"%PYTHON%" manage.py runserver
+"%PYTHON%" manage.py runserver 127.0.0.1:9000
 exit /b 0
 
 :error

@@ -1,6 +1,6 @@
 from django.urls import path
 
-from . import views, webhooks
+from . import auth_api, views, webhooks
 
 app_name = "web"
 
@@ -9,6 +9,10 @@ urlpatterns = [
     path("iniciar-sesion/", views.iniciar_sesion, name="iniciar_sesion"),
     path("iniciar-sesion/devoto/", views.devoto_login, name="devoto_login"),
     path("iniciar-sesion/administrativo/", views.administrativo_login, name="administrativo_login"),
+    path("api/auth/login/", auth_api.api_login, name="api_auth_login"),
+    path("api/auth/refresh/", auth_api.api_refresh, name="api_auth_refresh"),
+    path("api/auth/me/", auth_api.api_me, name="api_auth_me"),
+    path("api/auth/logout/", auth_api.api_logout, name="api_auth_logout"),
     path("devoto/", views.devoto_panel, name="devoto_panel"),
     path(
         "devoto/preferencias-comunicacion/<int:devoto_id>/",

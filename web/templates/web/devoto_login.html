@@ -1,298 +1,515 @@
 {% extends "web/base.html" %}
+{% load static %}
 
 {% block title %}Acceso de devotos | TRADICIÓN VIVA{% endblock %}
-
-{% block topbar_style %}style="background:#d4af37;"{% endblock %}
-
 {% block header_actions %}{% endblock %}
 
 {% block extra_css %}
 <style>
-  .login-shell{
-    max-width:570px;
-    margin:30px auto 60px;
-    background:#151515;
-    color:#fff;
-    border:1px solid #2a2a2a;
-    border-radius:10px;
+  .auth-page{
+    max-width:1050px;
+    margin:55px auto 80px;
+    padding:0 24px;
+    font-family:"Times New Roman", Times, serif;
+  }
+
+  .auth-container{
+    display:grid;
+    grid-template-columns: .85fr 1.15fr;
+    min-height:560px;
+
+    background:#fff;
+    border:1px solid #ded2e2;
+    border-radius:24px;
     overflow:hidden;
-    box-shadow:0 18px 44px rgba(0,0,0,.45);
+
+    box-shadow:0 22px 55px rgba(66,25,78,.13);
   }
 
-  .login-bar{
-    background:#000;
-    color:#d4af37;
-    padding:16px 28px;
-    font-family:Georgia,serif;
-    font-size:20px;
-    border-bottom:2px solid #d4af37;
-  }
+  /* =========================================
+     PANEL DE IDENTIDAD
+     ========================================= */
+  .auth-brand{
+    position:relative;
+    overflow:hidden;
 
-  .login-bar span{
-    margin-right:10px;
-  }
+    display:flex;
+    flex-direction:column;
+    justify-content:center;
+    align-items:center;
 
-  .login-body{
-    padding:32px 25px 0;
-  }
-
-  .login-body h1{
     text-align:center;
-    color:#d4af37;
-    font-family:Georgia,serif;
-    font-size:30px;
-    margin:0 0 25px;
+    padding:48px 38px;
+
+    background:
+      linear-gradient(
+        145deg,
+        #42194e 0%,
+        #743a8b 58%,
+        #9b68aa 100%
+      );
+
+    color:#fff;
   }
 
-  .login-line{
-    height:1px;
-    background:#333;
-    margin-bottom:35px;
+  .auth-brand::before{
+    content:"";
+    position:absolute;
+    width:280px;
+    height:280px;
+    border:1px solid rgba(255,255,255,.12);
+    border-radius:50%;
+    top:-110px;
+    left:-120px;
   }
 
-  .login-field{
+  .auth-brand::after{
+    content:"";
+    position:absolute;
+    width:220px;
+    height:220px;
+    background:rgba(255,255,255,.06);
+    border-radius:50%;
+    bottom:-90px;
+    right:-70px;
+  }
+
+  .auth-logo{
+    position:relative;
+    z-index:2;
+
+    width:125px;
+    height:125px;
+    object-fit:contain;
+
+    background:#fff;
+    border-radius:50%;
+    padding:9px;
+
+    box-shadow:0 12px 30px rgba(0,0,0,.18);
+    margin-bottom:25px;
+  }
+
+  .auth-brand h2{
+    position:relative;
+    z-index:2;
+
+    margin:0 0 10px;
+    font-size:31px;
+    letter-spacing:.03em;
+  }
+
+  .auth-brand p{
+    position:relative;
+    z-index:2;
+
+    max-width:310px;
+    margin:0;
+    line-height:1.65;
+    font-size:17px;
+    color:#f4eaf6;
+  }
+
+  .auth-badge{
+    position:relative;
+    z-index:2;
+
+    margin-top:30px;
+    padding:9px 16px;
+
+    border:1px solid rgba(255,255,255,.32);
+    border-radius:999px;
+
+    font-size:14px;
+  }
+
+
+  /* =========================================
+     FORMULARIO
+     ========================================= */
+  .auth-form-side{
+    display:flex;
+    align-items:center;
+    padding:48px 58px;
+    background:#fff;
+  }
+
+  .auth-form-content{
+    width:100%;
+    max-width:480px;
+    margin:auto;
+  }
+
+  .auth-kicker{
+    color:#743a8b;
+    font-size:13px;
+    font-weight:800;
+    letter-spacing:.15em;
+    text-transform:uppercase;
+  }
+
+  .auth-form-content h1{
+    margin:8px 0 8px;
+    color:#302535;
+    font-size:38px;
+  }
+
+  .auth-description{
+    color:#786b7b;
+    line-height:1.55;
+    margin:0 0 32px;
+  }
+
+  .auth-general{
+    padding:12px 14px;
+    margin-bottom:18px;
+
+    border-left:4px solid #743a8b;
+    background:#f7eff9;
+    color:#54395d;
+
+    border-radius:5px;
+  }
+
+
+  .auth-field{
     display:block;
-    margin-bottom:16px;
+    margin-bottom:20px;
   }
 
-  .login-field input{
+  .auth-field-title{
+    display:block;
+    margin-bottom:7px;
+
+    color:#413545;
+    font-size:15px;
+    font-weight:700;
+  }
+
+  .auth-field input{
     box-sizing:border-box;
     width:100%;
-    height:68px;
-    border:1px solid #3a3a3a;
-    border-radius:5px;
-    background:#101010;
-    padding:0 16px;
-    font-size:20px;
-    color:#fff;
-    transition:.2s;
-  }
+    height:56px;
 
-  .login-field input::placeholder{
-    color:#999;
-  }
+    padding:0 17px;
 
-  .login-field input:hover{
-    border-color:#555;
-  }
+    border:1px solid #d8ccdc;
+    border-radius:10px;
 
-  .login-field input:focus{
-    outline:none;
-    border-color:#d4af37;
-    box-shadow:0 0 0 3px rgba(212,175,55,.16);
-    background:#111;
-  }
+    background:#fbf9fc;
+    color:#2b2130;
 
-  .login-error{
-    display:block;
-    color:#d4af37;
-    font-size:13px;
-    margin-top:6px;
-  }
-
-  .login-general{
-    background:#26230f;
-    border:1px solid #d4af37;
-    color:#f1da87;
-    padding:12px 14px;
-    margin-bottom:16px;
-    border-radius:5px;
-  }
-
-  .login-forgot{
-    text-align:center;
-    margin:18px 0 28px;
-  }
-
-  .login-forgot a{
-    color:#d4af37;
-    font-family:Georgia,serif;
+    font-family:"Times New Roman", Times, serif;
     font-size:17px;
-    text-decoration:none;
-    transition:.2s;
+
+    transition:.2s ease;
   }
 
-  .login-forgot a:hover{
-    color:#f0d675;
+  .auth-field input::placeholder{
+    color:#9b909e;
+  }
+
+  .auth-field input:focus{
+    outline:none;
+    border-color:#743a8b;
+    background:#fff;
+
+    box-shadow:
+      0 0 0 4px rgba(116,58,139,.10);
+  }
+
+  .auth-error{
+    display:block;
+    margin-top:6px;
+    color:#a63345;
+    font-size:13px;
+  }
+
+  .auth-options{
+    display:flex;
+    justify-content:flex-end;
+    margin:-2px 0 24px;
+  }
+
+  .auth-options a{
+    color:#743a8b;
+    text-decoration:none;
+  }
+
+  .auth-options a:hover{
     text-decoration:underline;
   }
 
-  .login-submit{
-    width:calc(100% + 50px);
-    margin-left:-25px;
-    border:0;
-    border-top:1px solid #d4af37;
-    background:#d4af37;
-    color:#000;
-    font-size:21px;
-    font-weight:800;
-    padding:20px;
-    cursor:pointer;
-    transition:.2s;
-  }
-
-  .login-submit:hover{
-    background:#c9a13b;
-  }
-
-  .login-foot{
-    text-align:center;
-    padding:24px 18px 26px;
-    color:#aaa;
-    line-height:1.6;
-  }
-
-  .login-foot strong{
-    color:#fff;
-  }
-
-  .change-access{
-    display:inline-block;
-    margin-top:10px;
-    color:#d4af37;
-    font-weight:800;
-    text-decoration:none;
-    transition:.2s;
-  }
-
-  .change-access:hover{
-    color:#f0d675;
-  }
-
-  .home-button{
-    display:inline-flex;
+  .auth-remember{
+    display:flex;
     align-items:center;
+    gap:8px;
+    margin:-8px 0 20px;
+    color:#786b7b;
+    font-size:14px;
+  }
+
+  .auth-submit{
+    width:100%;
+    min-height:54px;
+
+    border:0;
+    border-radius:11px;
+
+    background:#743a8b;
+    color:#fff;
+
+    font-family:"Times New Roman", Times, serif;
+    font-size:18px;
+    font-weight:800;
+
+    cursor:pointer;
+    transition:.2s ease;
+  }
+
+  .auth-submit:hover{
+    background:#42194e;
+    transform:translateY(-1px);
+
+    box-shadow:0 10px 24px rgba(66,25,78,.20);
+  }
+
+  .auth-divider{
+    display:flex;
+    align-items:center;
+    gap:14px;
+    margin:27px 0 20px;
+
+    color:#998d9c;
+    font-size:13px;
+  }
+
+  .auth-divider::before,
+  .auth-divider::after{
+    content:"";
+    height:1px;
+    flex:1;
+    background:#e5dce8;
+  }
+
+  .auth-links{
+    display:flex;
+    justify-content:space-between;
+    gap:12px;
+    flex-wrap:wrap;
+  }
+
+  .auth-links a{
+    display:inline-flex;
     justify-content:center;
-    margin-top:15px;
-    padding:10px 20px;
-    border:1px solid #d4af37;
-    border-radius:7px;
-    background:#101010;
-    color:#d4af37 !important;
-    font-weight:700 !important;
+    align-items:center;
+
+    min-height:43px;
+    padding:0 15px;
+
+    border:1px solid #d6c4dc;
+    border-radius:9px;
+
+    background:#fff;
+    color:#653274;
+
     text-decoration:none;
+    font-weight:700;
+
     transition:.2s;
   }
 
-  .home-button:hover{
-    background:#d4af37;
-    color:#000 !important;
-    transform:translateY(-1px);
+  .auth-links a:hover{
+    background:#f5edf7;
+    border-color:#743a8b;
   }
 
-  @media(max-width:650px){
-    .login-shell{
-      margin:20px 12px 45px;
+
+  @media(max-width:800px){
+
+    .auth-page{
+      margin:25px auto 45px;
+      padding:0 14px;
     }
 
-    .login-body{
-      padding-left:18px;
-      padding-right:18px;
+    .auth-container{
+      grid-template-columns:1fr;
     }
 
-    .login-submit{
-      width:calc(100% + 36px);
-      margin-left:-18px;
+    .auth-brand{
+      padding:32px 25px;
     }
 
-    .login-body h1{
-      font-size:27px;
+    .auth-logo{
+      width:90px;
+      height:90px;
+    }
+
+    .auth-brand h2{
+      font-size:25px;
+    }
+
+    .auth-form-side{
+      padding:35px 25px;
+    }
+
+    .auth-form-content h1{
+      font-size:31px;
     }
   }
+
 </style>
 {% endblock %}
 
+
 {% block content %}
-<section class="login-shell">
 
-  <div class="login-bar">
-    <span>🔒</span>
-    Iniciar Sesión
-  </div>
+<div class="auth-page">
 
-  <div class="login-body">
+  <section class="auth-container">
 
-    <h1>Iniciar Sesión</h1>
+    <!-- IZQUIERDA -->
+    <aside class="auth-brand">
 
-    <div class="login-line"></div>
+      <img
+        src="{% static 'web/img/tradicion_viva_logo.png' %}"
+        alt="Tradición Viva"
+        class="auth-logo"
+      >
 
-    <form method="post">
+      <h2>TRADICIÓN VIVA</h2>
 
-      {% csrf_token %}
+      <p>
+        Un espacio digital para conservar,
+        organizar y vivir nuestras tradiciones.
+      </p>
 
-      {% if next %}
-        <input type="hidden" name="next" value="{{ next }}">
-      {% endif %}
-
-      {% if form.non_field_errors %}
-        <div class="login-general">
-          {% for error in form.non_field_errors %}
-            {{ error }}
-          {% endfor %}
-        </div>
-      {% endif %}
-
-      <label class="login-field">
-        {{ form.correo }}
-
-        {% for error in form.correo.errors %}
-          <small class="login-error">
-            {{ error }}
-          </small>
-        {% endfor %}
-      </label>
-
-      <label class="login-field">
-        {{ form.password }}
-
-        {% for error in form.password.errors %}
-          <small class="login-error">
-            {{ error }}
-          </small>
-        {% endfor %}
-      </label>
-
-      <div class="login-forgot">
-        <a href="{% url 'web:devoto_password_reset' %}">
-          ¿Olvidó su contraseña?
-        </a>
+      <div class="auth-badge">
+        Portal del Devoto
       </div>
 
-      <button class="login-submit" type="submit">
-        Iniciar
-      </button>
+    </aside>
 
-    </form>
 
-    <div class="login-foot">
+    <!-- DERECHA -->
+    <div class="auth-form-side">
 
-      ¿Aún no tienes cuenta?<br>
+      <div class="auth-form-content">
 
-      Regístrate desde la sección
-      <strong>Devotos → Registro</strong>
-      de tu organización.
+        <span class="auth-kicker">
+          Acceso personal
+        </span>
 
-      <br>
+        <h1>Bienvenido</h1>
 
-      <a
-        class="change-access"
-        href="{% url 'web:iniciar_sesion' %}"
-      >
-        Cambiar tipo de acceso
-      </a>
+        <p class="auth-description">
+          Ingresa con el correo y contraseña asociados
+          a tu registro como devoto.
+        </p>
 
-      <br>
 
-      <a
-        class="home-button"
-        href="{% url 'web:home' %}"
-      >
-        ← Regresar a la página principal
-      </a>
+        <form method="post">
+
+          {% csrf_token %}
+
+
+          {% if next %}
+            <input type="hidden" name="next" value="{{ next }}">
+          {% endif %}
+
+
+          {% if form.non_field_errors %}
+
+            <div class="auth-general">
+
+              {% for error in form.non_field_errors %}
+                {{ error }}
+              {% endfor %}
+
+            </div>
+
+          {% endif %}
+
+          <label class="auth-field">
+
+            <span class="auth-field-title">
+              Correo electrónico
+            </span>
+
+            {{ form.correo }}
+
+            {% for error in form.correo.errors %}
+              <small class="auth-error">
+                {{ error }}
+              </small>
+            {% endfor %}
+
+          </label>
+
+          <label class="auth-remember">
+            {{ form.recordar }}
+            {{ form.recordar.label }}
+          </label>
+
+
+          <label class="auth-field">
+
+            <span class="auth-field-title">
+              Contraseña
+            </span>
+
+            {{ form.password }}
+
+            {% for error in form.password.errors %}
+              <small class="auth-error">
+                {{ error }}
+              </small>
+            {% endfor %}
+
+          </label>
+
+
+          <div class="auth-options">
+
+            <a href="{% url 'web:devoto_password_reset' %}">
+              ¿Olvidaste tu contraseña?
+            </a>
+
+          </div>
+
+
+          <button
+            class="auth-submit"
+            type="submit"
+          >
+            Ingresar a mi cuenta
+          </button>
+
+        </form>
+
+        <div class="auth-divider">
+          Otras opciones
+        </div>
+
+
+        <div class="auth-links">
+
+          <a href="{% url 'web:iniciar_sesion' %}">
+            ← Cambiar acceso
+          </a>
+
+          <a href="{% url 'web:home' %}">
+            Página principal
+          </a>
+
+        </div>
+
+      </div>
 
     </div>
 
-  </div>
+  </section>
 
-</section>
+</div>
+
 {% endblock %} 

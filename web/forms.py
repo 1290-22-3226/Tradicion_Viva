@@ -284,6 +284,10 @@ class DevotoLoginForm(forms.Form):
         label="Contraseña",
         widget=forms.PasswordInput(attrs={"autocomplete": "current-password", "placeholder": "Contraseña"}),
     )
+    recordar = forms.BooleanField(
+        label="Mantener mi sesión iniciada",
+        required=False,
+    )
 
     def clean_correo(self):
         return self.cleaned_data["correo"].strip().lower()

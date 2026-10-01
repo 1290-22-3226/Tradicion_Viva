@@ -1,10 +1,12 @@
 from django import forms
 from django.contrib import admin, messages
+from django.core.exceptions import PermissionDenied
 from django.urls import reverse
 from django.utils import timezone
 from django.utils.html import format_html
 
 from .models import (
+    AdministradorOrganizacion,
     Comunicado,
     CuentaDevoto,
     Devoto,
@@ -18,6 +20,167 @@ from .models import (
 )
 
 from .messaging import MessagingError, enviar_comunicado
+
+
+admin.site.site_header = "TRADICIÓN VIVA | Administración"
+admin.site.site_title = "TRADICIÓN VIVA"
+admin.site.index_title = "Gestión de hermandades y cofradías"
+
+
+# =========================================================
+# CONTROL DE ACCESO POR ORGANIZACIÓN
+# =========================================================
+
+def _organizacion_asignada_id(request):
+    """
+    Devuelve la organización asignada al usuario administrativo.
+
+    None = superusuario con acceso global.
+    0    = usuario sin organización asignada o usuario no autenticado.
+    """
+
+    # IMPORTANTE:
+    # En /admin/login/ Django utiliza AnonymousUser.
+    # No se debe consultar la BD usando AnonymousUser como ForeignKey.
+    if not request.user.is_authenticated:
+        return 0
+
+    # El superusuario puede administrar todas las organizaciones.
+    if request.user.is_superuser:
+        return None
+
+    cache_name = "_tradicion_viva_organizacion_id"
+
+    if hasattr(request, cache_name):
+        return getattr(request, cache_name)
+
+    organizacion_id = (
+        AdministradorOrganizacion.objects
+        .filter(
+            usuario_id=request.user.pk,
+            activo=True,
+        )
+        .values_list("hermandad_id", flat=True)
+        .first()
+        or 0
+    )
+
+    setattr(
+        request,
+        cache_name,
+        organizacion_id
+    )
+
+    return organizacion_id 
+
+class OrganizacionAdminMixin:
+    """Limita un ModelAdmin a la hermandad/cofradía asignada al usuario."""
+
+    organizacion_field = "hermandad"
+
+    def _obj_pertenece_a_usuario(self, request, obj):
+        if request.user.is_superuser:
+            return True
+        organizacion_id = _organizacion_asignada_id(request)
+        if not organizacion_id or obj is None:
+            return bool(organizacion_id)
+        return getattr(obj, f"{self.organizacion_field}_id", None) == organizacion_id
+
+    def get_queryset(self, request):
+        queryset = super().get_queryset(request)
+        organizacion_id = _organizacion_asignada_id(request)
+        if organizacion_id is None:
+            return queryset
+        if not organizacion_id:
+            return queryset.none()
+        return queryset.filter(**{f"{self.organizacion_field}_id": organizacion_id})
+
+    def get_list_filter(self, request):
+        filtros = list(super().get_list_filter(request))
+        if not request.user.is_superuser:
+            filtros = [f for f in filtros if f != self.organizacion_field]
+        return tuple(filtros)
+
+    def formfield_for_foreignkey(self, db_field, request, **kwargs):
+        if db_field.name == self.organizacion_field and not request.user.is_superuser:
+            organizacion_id = _organizacion_asignada_id(request)
+            kwargs["queryset"] = Hermandad.objects.filter(pk=organizacion_id) if organizacion_id else Hermandad.objects.none()
+            field = super().formfield_for_foreignkey(db_field, request, **kwargs)
+            if organizacion_id:
+                field.initial = organizacion_id
+                # Comunicado permite NULL para el superusuario, pero para un
+                # administrador de organización siempre debe quedar fijado.
+                field.required = True
+                field.empty_label = None
+            return field
+        return super().formfield_for_foreignkey(db_field, request, **kwargs)
+
+    def save_model(self, request, obj, form, change):
+        organizacion_id = _organizacion_asignada_id(request)
+        if organizacion_id is not None:
+            if not organizacion_id:
+                raise PermissionDenied("No tienes una hermandad o cofradía asignada.")
+            setattr(obj, f"{self.organizacion_field}_id", organizacion_id)
+        return super().save_model(request, obj, form, change)
+
+    def has_module_permission(self, request):
+        if request.user.is_superuser:
+            return super().has_module_permission(request)
+        return bool(_organizacion_asignada_id(request))
+
+    def has_view_permission(self, request, obj=None):
+        if request.user.is_superuser:
+            return super().has_view_permission(request, obj)
+        return self._obj_pertenece_a_usuario(request, obj)
+
+    def has_add_permission(self, request):
+        if request.user.is_superuser:
+            return super().has_add_permission(request)
+        return bool(_organizacion_asignada_id(request))
+
+    def has_change_permission(self, request, obj=None):
+        if request.user.is_superuser:
+            return super().has_change_permission(request, obj)
+        return self._obj_pertenece_a_usuario(request, obj)
+
+    def has_delete_permission(self, request, obj=None):
+        if request.user.is_superuser:
+            return super().has_delete_permission(request, obj)
+        return self._obj_pertenece_a_usuario(request, obj)
+
+
+# =========================================================
+# ASIGNACIÓN DE ADMINISTRADORES
+# =========================================================
+
+@admin.register(AdministradorOrganizacion)
+class AdministradorOrganizacionAdmin(admin.ModelAdmin):
+    list_display = ("usuario", "hermandad", "activo", "actualizado_en")
+    list_filter = ("activo", "hermandad")
+    search_fields = ("usuario__username", "usuario__email", "hermandad__nombre")
+    autocomplete_fields = ("usuario", "hermandad")
+    readonly_fields = ("creado_en", "actualizado_en")
+
+    def has_module_permission(self, request):
+        return request.user.is_superuser
+
+    def has_view_permission(self, request, obj=None):
+        return request.user.is_superuser
+
+    def has_add_permission(self, request):
+        return request.user.is_superuser
+
+    def has_change_permission(self, request, obj=None):
+        return request.user.is_superuser
+
+    def has_delete_permission(self, request, obj=None):
+        return request.user.is_superuser
+
+    def save_model(self, request, obj, form, change):
+        super().save_model(request, obj, form, change)
+        if obj.activo and not obj.usuario.is_staff:
+            obj.usuario.is_staff = True
+            obj.usuario.save(update_fields=["is_staff"])
 
 
 # =========================================================
@@ -147,6 +310,38 @@ class HermandadAdmin(admin.ModelAdmin):
         ),
     )
 
+    def get_queryset(self, request):
+        queryset = super().get_queryset(request)
+        organizacion_id = _organizacion_asignada_id(request)
+        if organizacion_id is None:
+            return queryset
+        if not organizacion_id:
+            return queryset.none()
+        return queryset.filter(pk=organizacion_id)
+
+    def has_module_permission(self, request):
+        if request.user.is_superuser:
+            return super().has_module_permission(request)
+        return bool(_organizacion_asignada_id(request))
+
+    def has_view_permission(self, request, obj=None):
+        if request.user.is_superuser:
+            return super().has_view_permission(request, obj)
+        organizacion_id = _organizacion_asignada_id(request)
+        return bool(organizacion_id and (obj is None or obj.pk == organizacion_id))
+
+    def has_change_permission(self, request, obj=None):
+        if request.user.is_superuser:
+            return super().has_change_permission(request, obj)
+        organizacion_id = _organizacion_asignada_id(request)
+        return bool(organizacion_id and (obj is None or obj.pk == organizacion_id))
+
+    def has_add_permission(self, request):
+        return request.user.is_superuser and super().has_add_permission(request)
+
+    def has_delete_permission(self, request, obj=None):
+        return request.user.is_superuser and super().has_delete_permission(request, obj)
+
     @admin.display(description="Turnos")
     def editor_turnos_link(self, obj):
         if not obj or not obj.pk or not obj.slug:
@@ -168,7 +363,7 @@ class HermandadAdmin(admin.ModelAdmin):
 # =========================================================
 
 @admin.register(TurnoRecorrido)
-class TurnoRecorridoAdmin(admin.ModelAdmin):
+class TurnoRecorridoAdmin(OrganizacionAdminMixin, admin.ModelAdmin):
     """Editor de turnos disponible únicamente para usuarios del administrador."""
 
     list_display = (
@@ -272,7 +467,7 @@ class TurnoRecorridoAdmin(admin.ModelAdmin):
 # =========================================================
 
 @admin.register(EventoAgenda)
-class EventoAgendaAdmin(admin.ModelAdmin):
+class EventoAgendaAdmin(OrganizacionAdminMixin, admin.ModelAdmin):
 
     list_display = (
         "titulo",
@@ -355,7 +550,7 @@ class EventoAgendaAdmin(admin.ModelAdmin):
 # =========================================================
 
 @admin.register(Devoto)
-class DevotoAdmin(admin.ModelAdmin):
+class DevotoAdmin(OrganizacionAdminMixin, admin.ModelAdmin):
 
     list_display = (
         "nombre_completo",
@@ -485,6 +680,16 @@ class DevotoAdmin(admin.ModelAdmin):
     def dpi_mascarado(self, obj):
         return obj.dpi_mascarado
 
+    def formfield_for_foreignkey(self, db_field, request, **kwargs):
+        if db_field.name == "cuenta" and not request.user.is_superuser:
+            organizacion_id = _organizacion_asignada_id(request)
+            kwargs["queryset"] = (
+                CuentaDevoto.objects.filter(inscripciones__hermandad_id=organizacion_id).distinct()
+                if organizacion_id
+                else CuentaDevoto.objects.none()
+            )
+        return super().formfield_for_foreignkey(db_field, request, **kwargs)
+
     def save_model(self, request, obj, form, change):
 
         obj.acepta_comunicaciones = any(
@@ -515,7 +720,7 @@ class DevotoAdmin(admin.ModelAdmin):
 # =========================================================
 
 @admin.register(ImagenHermandad)
-class ImagenHermandadAdmin(admin.ModelAdmin):
+class ImagenHermandadAdmin(OrganizacionAdminMixin, admin.ModelAdmin):
 
     list_display = (
         "titulo",
@@ -606,7 +811,7 @@ class ImagenHermandadAdmin(admin.ModelAdmin):
 # =========================================================
 
 @admin.register(VideoHermandad)
-class VideoHermandadAdmin(admin.ModelAdmin):
+class VideoHermandadAdmin(OrganizacionAdminMixin, admin.ModelAdmin):
 
     list_display = (
         "titulo",
@@ -683,7 +888,7 @@ class VideoHermandadAdmin(admin.ModelAdmin):
 # =========================================================
 
 @admin.register(MarchaProcesional)
-class MarchaProcesionalAdmin(admin.ModelAdmin):
+class MarchaProcesionalAdmin(OrganizacionAdminMixin, admin.ModelAdmin):
 
     list_display = (
         "titulo",
@@ -761,6 +966,25 @@ class CuentaDevotoAdmin(admin.ModelAdmin):
     )
 
 
+
+    # Solo el superusuario puede administrar la cuenta global del devoto.
+    # Un mismo correo puede estar inscrito en varias organizaciones y editar
+    # esta cuenta desde una sola hermandad afectaría también a las demás.
+    def has_module_permission(self, request):
+        return request.user.is_superuser
+
+    def has_view_permission(self, request, obj=None):
+        return request.user.is_superuser
+
+    def has_add_permission(self, request):
+        return request.user.is_superuser
+
+    def has_change_permission(self, request, obj=None):
+        return request.user.is_superuser
+
+    def has_delete_permission(self, request, obj=None):
+        return request.user.is_superuser
+
 # =========================================================
 # FORMULARIO DE COMUNICADOS
 # =========================================================
@@ -817,7 +1041,7 @@ class ComunicadoAdminForm(forms.ModelForm):
 # =========================================================
 
 @admin.register(Comunicado)
-class ComunicadoAdmin(admin.ModelAdmin):
+class ComunicadoAdmin(OrganizacionAdminMixin, admin.ModelAdmin):
 
     form = ComunicadoAdminForm
 
@@ -1188,26 +1412,46 @@ class EnvioComunicadoAdmin(admin.ModelAdmin):
 
     list_per_page = 100
 
-    def has_add_permission(
-        self,
-        request,
-    ):
+    def has_module_permission(self, request):
+        if request.user.is_superuser:
+            return super().has_module_permission(request)
+        return bool(_organizacion_asignada_id(request))
+
+    def has_view_permission(self, request, obj=None):
+        if request.user.is_superuser:
+            return super().has_view_permission(request, obj)
+
+        organizacion_id = _organizacion_asignada_id(request)
+        if not organizacion_id:
+            return False
+        if obj is None:
+            return True
+        return obj.comunicado.hermandad_id == organizacion_id
+
+    def has_add_permission(self, request):
         return False
 
-    def has_change_permission(
-        self,
-        request,
-        obj=None,
-    ):
+    def has_change_permission(self, request, obj=None):
         return False
+
+    def has_delete_permission(self, request, obj=None):
+        return request.user.is_superuser and super().has_delete_permission(request, obj)
 
     def get_queryset(self, request):
-
-        return (
+        queryset = (
             super()
             .get_queryset(request)
             .select_related(
                 "comunicado",
+                "comunicado__hermandad",
                 "devoto",
             )
-        ) 
+        )
+
+        organizacion_id = _organizacion_asignada_id(request)
+        if organizacion_id is None:
+            return queryset
+        if not organizacion_id:
+            return queryset.none()
+        return queryset.filter(comunicado__hermandad_id=organizacion_id)
+

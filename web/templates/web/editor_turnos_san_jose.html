@@ -14,40 +14,61 @@
 {% endblock %}
 
 {% block extra_css %}
+{% include "web/_tema_organizacion_css.html" %}
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 
 <style>
+  :root{
+    --editor-surface: var(--theme-surface, #ffffff);
+    --editor-surface-alt: var(--theme-surface-2, #f5f5f5);
+    --editor-border: var(--theme-border, #d8d8d8);
+    --editor-text: var(--theme-text, #111111);
+    --editor-muted: var(--theme-muted, #2a2a2a);
+    --editor-button: var(--theme-button, #d4af37);
+    --editor-button-hover: var(--theme-button-hover, #c39a2d);
+    --editor-button-text: var(--theme-button-text, #111111);
+    --editor-input-bg: var(--theme-surface-2, #f5f5f5);
+  }
+
   .editor-grid{
     display:grid;
     grid-template-columns: 1.2fr .8fr;
     gap:24px;
     margin-top:22px;
+    align-items:stretch;
   }
 
   .card{
-    background:#151515;
-    border:1px solid #2a2a2a;
+    background:var(--editor-surface)!important;
+    border:1px solid var(--editor-border)!important;
     border-radius:20px;
     overflow:hidden;
-    box-shadow:0 12px 28px rgba(0,0,0,.2);
+    box-shadow:0 12px 28px rgba(0,0,0,.14);
+    display:flex;
+    flex-direction:column;
+    min-height:0;
   }
 
   .card-body{
     padding:20px;
+    color:var(--editor-text)!important;
   }
 
   #mapaEditor{
     width:100%;
     height:720px;
+    min-height:620px;
+    flex:1 1 auto;
+    background:var(--editor-surface-alt, #f4f4f4);
   }
 
   h1, h2{
-    color:#fff;
+    color:var(--editor-text)!important;
     margin:0 0 16px;
   }
 
   .help{
-    color:#cfcfcf;
+    color:var(--editor-muted)!important;
     margin-bottom:18px;
     line-height:1.6;
   }
@@ -64,7 +85,7 @@
 
   label{
     display:block;
-    color:#d8d8d8;
+    color:var(--editor-text)!important;
     margin-bottom:6px;
     font-weight:700;
   }
@@ -73,9 +94,10 @@
     width:100%;
     padding:11px 12px;
     border-radius:10px;
-    border:1px solid #353535;
-    background:#101010;
-    color:#fff;
+    border:1px solid var(--editor-border)!important;
+    background:var(--editor-input-bg)!important;
+    color:var(--editor-text)!important;
+    box-sizing:border-box;
   }
 
   .btn-row{
@@ -93,37 +115,39 @@
     cursor:pointer;
     text-decoration:none;
     display:inline-block;
+    color:var(--editor-button-text)!important;
   }
 
   .btn-save{
-    background:#d4af37;
-    color:#111;
+    background:var(--editor-button)!important;
+    color:var(--editor-button-text)!important;
   }
 
   .btn-clear{
-    background:#232323;
-    color:#fff;
-    border:1px solid #3a3a3a;
+    background:var(--editor-surface-alt)!important;
+    color:#111111!important;
+    border:1px solid var(--editor-border)!important;
   }
 
   .turnos-lista{
     margin-top:22px;
     max-height:420px;
     overflow:auto;
-    border-top:1px solid #2a2a2a;
+    border-top:1px solid var(--editor-border)!important;
     padding-top:16px;
   }
 
   .turno-item{
-    background:#101010;
-    border:1px solid #2a2a2a;
+    background:var(--editor-surface-alt)!important;
+    border:1px solid var(--editor-border)!important;
     border-radius:14px;
     padding:14px;
     margin-bottom:12px;
+    color:var(--editor-text)!important;
   }
 
   .turno-item strong{
-    color:#d4af37;
+    color:var(--theme-accent-strong, #111111)!important;
   }
 
   .turno-actions{
@@ -141,14 +165,14 @@
   }
 
   .btn-edit{
-    background:#1f1f1f;
-    color:#fff;
-    border:1px solid #444;
+    background:var(--editor-surface)!important;
+    color:#111111!important;
+    border:1px solid var(--editor-border)!important;
   }
 
   .btn-delete{
-    background:#5a1f1f;
-    color:#fff;
+    background:var(--theme-accent-strong, #7b3d3d)!important;
+    color:#111111!important;
   }
 
   .messages{
@@ -156,9 +180,9 @@
   }
 
   .message{
-    background:#132413;
-    color:#c7f5c7;
-    border:1px solid #2e5b2e;
+    background:var(--editor-surface-alt)!important;
+    color:var(--editor-text)!important;
+    border:1px solid var(--editor-border)!important;
     border-radius:12px;
     padding:12px 14px;
     margin-bottom:10px;
